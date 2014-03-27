@@ -1,5 +1,11 @@
-#ifndef GRAPH_H
-#define GRAPH_H
+/*
+ * Joint.h
+ *
+ *  Created on: 2014-3-26
+ *      Author: Lei Yang
+ */
+#ifndef GRAPH_H_
+#define GRAPH_H_
 #include <string>
 #include <map>
 #include <vector>
@@ -10,8 +16,8 @@ class Graph {
 		map<int, string> primaryAttribute;
 		
 		//The adjacency list of each vertex	    
-	    map<int, vector<int>> children;
-	    map<int, vector<int>> parents;
+	    map<int, vector<int> > children;
+	    map<int, vector<int> > parents;
 	    
 		//The value will be set after loading the graph
 		int totalEdges;	    
@@ -31,4 +37,4 @@ class Graph {
 	    void Combine(Graph another);
 
 };
-#endif
+#endif /* GRAPH_H_ */
