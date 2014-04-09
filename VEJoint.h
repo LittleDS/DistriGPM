@@ -32,9 +32,14 @@ public:
 		dataGraph->loadGraphFromFile(filename);
 	}
 
+	VEJoint(shared_ptr<Graph> inputGraph) {
+		dataGraph = inputGraph;
+	}
+
 	void IndexEdges(shared_ptr<Graph> graphPartition);
 	void IndexJoints(shared_ptr<Graph> graphPartition);
 	void outputIndex(string &filename);
+	void loadIndex(string &filename);
 };
 
 #endif /* VEJOINT_H_ */

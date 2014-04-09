@@ -8,6 +8,7 @@
 #include <Graph.h>
 #include <utility>
 #include <fstream>
+#include <sstream>
 #include <iostream>
 #include <Triple.h>
 using namespace std;
@@ -16,6 +17,12 @@ using namespace std;
  * Index the edges
  */
 void VEJoint::IndexEdges(shared_ptr<Graph> graphPartition) {
+	//Check whether the data graph is loaded
+	if (dataGraph == NULL) {
+		cout << "The data graph is not loaded." << endl;
+		return;
+	}
+
 	//Short name for the children in graph partition
 	auto localChildren = graphPartition->children;
 
@@ -44,7 +51,16 @@ void VEJoint::IndexEdges(shared_ptr<Graph> graphPartition) {
 	}
 }
 
+/**
+ * Index the joints
+ */
 void VEJoint::IndexJoints(shared_ptr<Graph> graphPartition) {
+	//Check whether the data graph is loaded
+	if (dataGraph == NULL) {
+		cout << "The data graph is not loaded." << endl;
+		return;
+	}
+
 	//short name for children
 	auto localChildren = graphPartition->children;
 
@@ -81,6 +97,9 @@ void VEJoint::IndexJoints(shared_ptr<Graph> graphPartition) {
 	}
 }
 
+/**
+ * Output the index to files
+ */
 void VEJoint::outputIndex(string &filename) {
 	ofstream ofs(filename + "Edge");
 	if (!ofs) {
@@ -120,4 +139,68 @@ void VEJoint::outputIndex(string &filename) {
 	}
 
 	ofs1.close();
+}
+
+/**
+ * Load the index from file
+ */
+void VEJoint::loadIndex(string &filename) {
+	ifstream ifs(filename + "Edge");
+	if (!ifs) {
+		cout << "ERROR: Opening the file." << endl;
+		return;
+	}
+
+	string line;
+	while (getline(ifs, line)) {
+		istringstream labelline(line);
+		string labelA, labelB;
+		labelline >> labelA >> labelB;
+		pair<string, string> labelPair(labelA, labelB);
+
+		getline(ifs, line);
+		istringstream idline(line);
+
+		shared_ptr<vector<pair<int, int> > > ids = make_shared<vector<pair<int, int> > >();
+		int idA, idB;
+
+		while (idline >> idA) {
+			idline >> idB;
+			pair<int, int> idPair(idA, idB);
+			ids->push_back(idPair);
+		}
+		edgeIndex.insert(make_pair(labelPair, ids));
+	}
+
+	ifs.close();
+
+	ifstream ifs1(filename + "Joint");
+	if (!ifs1) {
+		cout << "ERROR: Opening the file." << endl;
+		return;
+	}
+
+	while (getline(ifs1, line)) {
+		istringstream labelline(line);
+		string labelA, labelB, labelC;
+		labelline >> labelA >> labelB >> labelC;
+		triple<string, string, string> labelTri(labelA, labelB, labelC);
+
+		getline(ifs1, line);
+		istringstream idline(line);
+
+		shared_ptr<vector<triple<int, int, int> > > ids = make_shared<vector<triple<int, int, int> > >();
+
+		int idA, idB, idC;
+
+		while (idline >> idA) {
+			idline >> idB >> idC;
+			triple<int, int, int> idTri(idA, idB, idC);
+			ids->push_back(idTri);
+		}
+
+		jointIndex.insert(make_pair(labelTri, ids));
+	}
+
+	ifs1.close();
 }

@@ -18,15 +18,11 @@ int main(int argc, char *argv[]) {
 	string filename = "LinkedIN";
 	VEJoint vj(filename);
 
-	string parname = "LinkedInPar.part0";
-	shared_ptr<Graph> par = make_shared<Graph>();
-	par->loadGraphFromFile(parname);
-
-	vj.IndexEdges(par);
-	vj.IndexJoints(par);
-
 	string indexname = "LinkedIn";
-	vj.outputIndex(indexname);
+	vj.loadIndex(filename);
+
+	string anothername = "L";
+	vj.outputIndex(anothername);
 
 
 //	gp->outputParMETIS(parFile);
