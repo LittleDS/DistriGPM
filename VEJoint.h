@@ -12,13 +12,13 @@
 #include <Graph.h>
 #include <string>
 #include <Triple.h>
-
+#include <Partition.h>
 using namespace std;
 
 class VEJoint {
 private:
 	//The original data graph
-	shared_ptr<Graph> dataGraph;
+	shared_ptr<Partition> graphPartition;
 	string filename;
 	map<pair<string, string>, shared_ptr<vector<pair<int, int> > > > edgeIndex;
 	map<triple<string, string, string>, shared_ptr<vector<triple<int, int, int> > > > jointIndex;
@@ -28,16 +28,16 @@ private:
 public:
 
 	VEJoint(string _filename):filename(_filename) {
-		dataGraph = make_shared<Graph>();
-		dataGraph->loadGraphFromFile(filename);
+		graphPartition = make_shared<Partition>();
+		graphPartition->loadGraphFromFile(filename);
 	}
 
-	VEJoint(shared_ptr<Graph> inputGraph) {
-		dataGraph = inputGraph;
+	VEJoint(shared_ptr<Partition> inputPartition) {
+		graphPartition = inputPartition;
 	}
 
-	void IndexEdges(shared_ptr<Graph> graphPartition);
-	void IndexJoints(shared_ptr<Graph> graphPartition);
+	void indexEdges();
+	void indexJoints();
 	void outputIndex(string &filename);
 	void loadIndex(string &filename);
 };

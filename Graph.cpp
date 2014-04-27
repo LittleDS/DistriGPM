@@ -5,19 +5,20 @@
  *      Author: Lei Yang
  */
 #include <Graph.h>
+#include <Partition.h>
 #include <fstream>
 #include <iostream>
 #include <sstream>
 #include <set>
 #include <string>
+#include <algorithm>
 
 using namespace std;
 //Default constructor
-Graph::Graph():totalEdges(0), graphLoaded(false) { }
+Graph::Graph():totalEdges(0) { }
 
 Graph::Graph(const Graph &another):
 	totalEdges(another.totalEdges),
-	graphLoaded(true),
 	primaryAttribute(another.primaryAttribute),
 	children(another.children),
 	parents(another.parents),
@@ -97,67 +98,115 @@ void Graph::loadGraphFromFile(string &filename) {
 			}
 		}
 
-		graphLoaded = true;
 	}
 
 	ifs.close();
 }
 
-/**
- * There is currently some potential errors with this function
- * Since the labels of the vertices in the graph is already there
- * When we try to insert a new edge into the graph, the parameter aS and aT must be consistent with
- * the labels already in the graph, this function doesn't check the consistency
- */
+
 void Graph::addEdge(int s, string &aS, int t, string &aT) {
+
 	if (primaryAttribute.find(s) == primaryAttribute.end()) {
 		shared_ptr<string> ts = make_shared<string>(aS);
 		primaryAttribute.insert({s, ts});
+	}
+	else {
+		string tempS = *primaryAttribute[s];
+		if (tempS != aS) {
+			cout << "The label doesn't match for source vertex" << endl;
+			return;
+		}
 	}
 
 	if (primaryAttribute.find(t) == primaryAttribute.end()) {
 		shared_ptr<string> ts = make_shared<string>(aT);
 		primaryAttribute.insert({t, ts});
 	}
+	else {
+		string tempT = *primaryAttribute[t];
+		if (tempT != aT) {
+			cout << "The label doesn't match for target vertex" << endl;
+			return;
+		}
+	}
 
 	if (children.find(s) != children.end()) {
-		children[s]->push_back(t);
+		if (find(children[s]->begin(), children[s]->end(), t) == children[s]->end()) {
+			children[s]->push_back(t);
+			outdegree[s]++;
+		}
 	}
 	else {
 		shared_ptr<vector<int> > childVector = make_shared<vector<int> >();
 		childVector->push_back(t);
 		children.insert({s, childVector});
+		outdegree.insert({s, 1});
 	}
 
 	if (parents.find(t) != parents.end()) {
-		parents[t]->push_back(s);
+		if (find(parents[t]->begin(), parents[t]->end(), t) == parents[t]->end()) {
+			parents[t]->push_back(s);
+			indegree[t]++;
+		}
 	}
 	else {
 		shared_ptr<vector<int> > parentVector = make_shared<vector<int> >();
 		parentVector->push_back(s);
 		parents.insert({t, parentVector});
-	}
-
-	//Update the in and out degree
-	if (outdegree.find(s) != outdegree.end()) {
-		outdegree[s]++;
-	}
-	else {
-		outdegree.insert({s, 1});
-	}
-
-	if (indegree.find(t) != indegree.end()) {
-		indegree[t]++;
-	}
-	else {
 		indegree.insert({t, 1});
 	}
+
 }
 
+void Graph::removeEdge(int s, int t) {
+	if (primaryAttribute.find(s) == primaryAttribute.end() ||
+		primaryAttribute.find(t) == primaryAttribute.end())
+		return;
+
+	//Remove t from the children list of s
+	if (children.find(s) == children.end())
+		return;
+
+	bool found = false;
+
+	auto clist = children[s];
+	for (auto i = clist->begin(); i != clist->end(); ++i) {
+		if (*i == t) {
+			clist->erase(i);
+			outdegree[s]--;
+			found = true;
+			break;
+		}
+	}
+
+	if (clist->size() == 0)
+		children.erase(s);
+
+	//Remove s from the parents list of t
+	if (parents.find(t) == parents.end())
+		return;
+
+	auto flist = parents[t];
+	for (auto i = flist->begin(); i != flist->end(); ++i) {
+		if (*i == s) {
+			flist->erase(i);
+			indegree[t]--;
+			break;
+		}
+	}
+
+	if (flist->size() == 0)
+		parents.erase(t);
+
+	if (found)
+		totalEdges--;
+}
 /**
  * Calculate the indegree and outdegree according to the children and parents table
  */
 void Graph::calculateDegree() {
+	indegree.clear();
+	outdegree.clear();
 	map<int, shared_ptr<string> >::iterator it;
 	for (it = primaryAttribute.begin(); it != primaryAttribute.end(); ++it) {
 		//Calculate the out-degree
@@ -322,7 +371,65 @@ void Graph::outputParMETIS(string &filename) {
 	ofs.close();
 }
 
-void Graph::divideGraph(int n, string &partfilename) {
+
+/**
+ * Calculate the diameter of the graph
+ * Please only use it for small graph
+ */
+int Graph::diameter() {
+	int totalVertices = primaryAttribute.size();
+	int **matrix = new int*[totalVertices];
+	for (int i = 0; i < totalVertices; i++)
+		matrix[i] = new int[totalVertices];
+
+	for (int i = 0; i < totalVertices; i++) {
+		for (int j = 0; j < totalVertices; j++) {
+			if (i != j) {
+				matrix[i][j] = 10000;
+			}
+			else
+				matrix[i][j] = 0;
+		}
+	}
+
+	for (auto i = primaryAttribute.begin(); i != primaryAttribute.end(); ++i) {
+		if (children.find(i->first) != children.end()) {
+			for (auto j = children[i->first]->begin(); j != children[i->first]->end(); ++j) {
+				matrix[i->first][*j] = 1;
+				matrix[*j][i->first] = 1;
+			}
+		}
+	}
+
+	for (int k = 0; k < totalVertices; k++) {
+		for (int i = 0; i < totalVertices; i++) {
+			for (int j = 0; j < totalVertices; j++) {
+				if (matrix[i][j] > matrix[i][k] + matrix[k][j])
+					matrix[i][j] = matrix[i][k] + matrix[k][j];
+			}
+		}
+	}
+
+	int max = 0;
+	for (int i = 0; i < totalVertices; i++) {
+		for (int j = 0; j < totalVertices; j++) {
+			//cout << matrix[i][j] << " ";
+			if (matrix[i][j] != 10000 && matrix[i][j] > max) {
+				max = matrix[i][j];
+			}
+		}
+		//cout << endl;
+	}
+
+	//Delete the resource
+	for (int i = 0; i < totalVertices; i++)
+		delete [] matrix[i];
+	delete [] matrix;
+
+	return max;
+}
+
+void Graph::divideGraph(int n, string &partfilename, string &output) {
 	const int totalVertices = primaryAttribute.size();
 	int* parts = new int[totalVertices];
 
@@ -333,25 +440,24 @@ void Graph::divideGraph(int n, string &partfilename) {
 		return;
 	}
 
+	//Read in the partition file
 	int division;
 	int i = 0;
 	while (ifs >> division) {
 		parts[i++] = division;
 	}
 
-	vector<shared_ptr<Graph> > graphs(n);
+	ifs.close();
 
-	map<int, shared_ptr<string> >::iterator it;
+	vector<shared_ptr<Partition> > partitions(n);
 
-	for (it = primaryAttribute.begin(); it != primaryAttribute.end(); ++it) {
+	for (auto it = primaryAttribute.begin(); it != primaryAttribute.end(); ++it) {
 
-		//Since the graph vertex ID starts from 1, we need to minus 1 here
-		int D = parts[it->first - 1];
+		int D = parts[it->first];
 
-		if (graphs[D] == NULL) {
-			graphs[D] = make_shared<Graph>();
+		if (partitions[D] == NULL) {
+			partitions[D] = make_shared<Partition>();
 		}
-
 
 		//If a node doesn't have any children, even though it's assigned to this partition
 		//we can skip inserting it into the primaryAttribute map here
@@ -359,32 +465,52 @@ void Graph::divideGraph(int n, string &partfilename) {
 		//by the addEdge method
 		if (children.find(it->first) != children.end()) {
 
-			graphs[D]->primaryAttribute.insert({it->first, it->second});
+			partitions[D]->primaryAttribute.insert({it->first, it->second});
+
+			//Update the core part
+			partitions[D]->corePart.insert(it->first);
 
 			//Assign all the out-going edges of one vertex to its partition
 			for (auto i = children[it->first]->begin(); i != children[it->first]->end(); ++i) {
-				graphs[D]->addEdge(it->first, *it->second, *i, *primaryAttribute[*i]);
+				partitions[D]->addEdge(it->first, *it->second, *i, *primaryAttribute[*i]);
+//				cout << it->first << " " << *it->second << " " << *i << " " << *primaryAttribute[*i] << endl;
+//				partitions[D]->print();
+			}
+		}
+
+		//Add the parents if any
+		if (parents.find(it->first) != parents.end()) {
+			if (partitions[D]->corePart.find(it->first) == partitions[D]->corePart.end()) {
+
+				partitions[D]->primaryAttribute.insert({it->first, it->second});
+
+				//Update the core part
+				partitions[D]->corePart.insert(it->first);
+
+			}
+			for (auto i = parents[it->first]->begin(); i != parents[it->first]->end(); ++i) {
+				partitions[D]->addEdge(*i, *primaryAttribute[*i], it->first, * it->second);
 			}
 		}
 	}
 
+
+	//Directly output these partitions into file
 	int count = 0;
-	for (auto i = graphs.begin(); i != graphs.end(); ++i) {
+	for (auto i = partitions.begin(); i != partitions.end(); ++i) {
 
 		//so awkward to convert int to string in C++;
 		//the to_string doesn't work for cygwin, don't know why
 		ostringstream convert;
 		convert << count++;
-		string outfile = partfilename + convert.str();
+		string outfile = output + convert.str();
 
 		//Output the partition graph
 		(*i)->outputGraph(outfile);
 	}
 
-	ifs.close();
 	delete[] parts;
 }
-
 /**
  * All the resource is managed by the smart pointers
  */

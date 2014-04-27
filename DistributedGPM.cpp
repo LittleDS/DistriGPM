@@ -10,20 +10,23 @@
 #include <math.h> 
 #include "mpi.h" 
 #include <iostream>
+#include <sstream>
 #include <Graph.h>
 #include <VEJoint.h>
+#include <SubQuery.h>
 using namespace std;
  
 int main(int argc, char *argv[]) {
-	string filename = "LinkedIN";
-	VEJoint vj(filename);
+	shared_ptr<Graph> queryGraph = make_shared<Graph>();
+	string queryFile = "queryGraph";
+	queryGraph->loadGraphFromFile(queryFile);
 
-	string indexname = "LinkedIn";
-	vj.loadIndex(filename);
-
-	string anothername = "L";
-	vj.outputIndex(anothername);
-
+	shared_ptr<SubQuery> sq = make_shared<SubQuery>();
+	auto stars = sq->decomposeIntoStar(queryGraph);
+	for (auto i = stars.begin(); i != stars.end(); ++i) {
+		(*i)->print();
+		cout << "---------------------------------" << endl;
+	}
 
 //	gp->outputParMETIS(parFile);
 

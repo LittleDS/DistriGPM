@@ -16,9 +16,9 @@ using namespace std;
 /**
  * Index the edges
  */
-void VEJoint::IndexEdges(shared_ptr<Graph> graphPartition) {
+void VEJoint::indexEdges() {
 	//Check whether the data graph is loaded
-	if (dataGraph == NULL) {
+	if (graphPartition == NULL) {
 		cout << "The data graph is not loaded." << endl;
 		return;
 	}
@@ -49,49 +49,48 @@ void VEJoint::IndexEdges(shared_ptr<Graph> graphPartition) {
 			edgeIndex[labelPair]->push_back(IDPair);
 		}
 	}
+
+
 }
 
 /**
  * Index the joints
  */
-void VEJoint::IndexJoints(shared_ptr<Graph> graphPartition) {
+void VEJoint::indexJoints() {
 	//Check whether the data graph is loaded
-	if (dataGraph == NULL) {
+	if (graphPartition == NULL) {
 		cout << "The data graph is not loaded." << endl;
 		return;
 	}
 
 	//short name for children
 	auto localChildren = graphPartition->children;
+	auto localParents = graphPartition->parents;
 
 	for (auto i = localChildren.begin(); i != localChildren.end(); ++i) {
+		if (localParents.find(i->first) == localParents.end())
+			continue;
 
 		string labelA = *graphPartition->primaryAttribute[i->first];
 
 		for (auto j = localChildren[i->first]->begin(); j != localChildren[i->first]->end(); ++j) {
 			string labelB = *graphPartition->primaryAttribute[*j];
 
-			//Check the global data graph to find the 2-hop children
-			if (dataGraph->children.find(*j) != dataGraph->children.end()) {
+			for (auto k = localParents[i->first]->begin(); k != localParents[i->first]->end(); ++k) {
 
-				shared_ptr<vector<int> > secLvChildren = dataGraph->children[*j];
+				//The label should be obtained from the data graph
+				string labelC = *graphPartition->primaryAttribute[*k];
 
-				for (auto k = secLvChildren->begin(); k != secLvChildren->end(); ++k) {
+				//Make the triple
+				triple<string, string, string> labelTri(labelC, labelA, labelB);
+				triple<int, int, int> IDTri(*k, i->first, *j);
 
-					//The label should be obtained from the data graph
-					string labelC = *dataGraph->primaryAttribute[*k];
-
-					//Make the triple
-					triple<string, string, string> labelTri(labelA, labelB, labelC);
-					triple<int, int, int> IDTri(i->first, *j, *k);
-
-					if (jointIndex.find(labelTri) == jointIndex.end()) {
-						shared_ptr<vector<triple<int, int, int> > > IDList = make_shared<vector<triple<int, int, int> > >();
-						jointIndex.insert(make_pair(labelTri, IDList));
-					}
-
-					jointIndex[labelTri]->push_back(IDTri);
+				if (jointIndex.find(labelTri) == jointIndex.end()) {
+					shared_ptr<vector<triple<int, int, int> > > IDList = make_shared<vector<triple<int, int, int> > >();
+					jointIndex.insert(make_pair(labelTri, IDList));
 				}
+
+				jointIndex[labelTri]->push_back(IDTri);
 			}
 		}
 	}
