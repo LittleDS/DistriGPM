@@ -17,16 +17,30 @@
 using namespace std;
  
 int main(int argc, char *argv[]) {
+	shared_ptr<Graph> dataGraph = make_shared<Graph>();
+	string dataFile = "LinkedIN";
+
+	shared_ptr<VEJoint> vj = make_shared<VEJoint>();
+	vj->loadIndex(dataFile);
+
+	SubQuery sq(dataGraph, vj);
+
 	shared_ptr<Graph> queryGraph = make_shared<Graph>();
 	string queryFile = "queryGraph";
 	queryGraph->loadGraphFromFile(queryFile);
 
-	shared_ptr<SubQuery> sq = make_shared<SubQuery>();
-	auto stars = sq->decomposeIntoStar(queryGraph);
-	for (auto i = stars.begin(); i != stars.end(); ++i) {
-		(*i)->print();
-		cout << "---------------------------------" << endl;
-	}
+	sq.evaluate(queryGraph);
+
+//	shared_ptr<Graph> queryGraph = make_shared<Graph>();
+//	string queryFile = "queryGraph";
+//	queryGraph->loadGraphFromFile(queryFile);
+//
+//	shared_ptr<SubQuery> sq = make_shared<SubQuery>();
+//	auto stars = sq->decomposeIntoStar(queryGraph);
+//	for (auto i = stars.begin(); i != stars.end(); ++i) {
+//		(*i)->print();
+//		cout << "---------------------------------" << endl;
+//	}
 
 //	gp->outputParMETIS(parFile);
 

@@ -10,10 +10,12 @@
 #include <memory>
 #include <Graph.h>
 #include <iostream>
+#include <MatchedComponent.h>
+#include <Star.h>
 using namespace std;
 
-vector<shared_ptr<Graph> > SubQuery::decomposeIntoStar(shared_ptr<Graph> queryGraph) {
-	vector<shared_ptr<Graph>> result;
+vector<shared_ptr<Star> > SubQuery::decomposeIntoStar(shared_ptr<Graph> queryGraph) {
+	vector<shared_ptr<Star>> result;
 
 	queryGraph->calculateDegree();
 
@@ -30,7 +32,7 @@ vector<shared_ptr<Graph> > SubQuery::decomposeIntoStar(shared_ptr<Graph> queryGr
 
 		if (center == -1) break;
 
-		shared_ptr<Graph> star = make_shared<Graph>();
+		shared_ptr<Star> star = make_shared<Star>(center);
 		auto centerLabel = queryGraph->primaryAttribute[center];
 
 		if (queryGraph->children.find(center) != queryGraph->children.end()) {
@@ -56,6 +58,238 @@ vector<shared_ptr<Graph> > SubQuery::decomposeIntoStar(shared_ptr<Graph> queryGr
 
 	return result;
 }
+
+shared_ptr<vector<MatchedComponent> > SubQuery::starQuery(shared_ptr<Star> star) {
+	const int center = star->center;
+
+	//To store the decomposed joints and edges
+	vector<triple<int, int, int> > joints;
+	vector<pair<int, int> > edges;
+
+	//Get a copy of the children and parents list
+	vector<int> childrenLocal;
+	if (star->children.find(center) != star->children.end())
+		childrenLocal = *star->children[center];
+	vector<int> parentsLocal;
+	if (star->parents.find(center) != star->parents.end())
+		parentsLocal = *star->parents[center];
+
+	//Decompose the joints first
+	while (!childrenLocal.empty() && !parentsLocal.empty()) {
+		int c = childrenLocal.back();
+		int p = parentsLocal.back();
+
+		triple<int, int, int> toInsert(p, center, c);
+		joints.push_back(toInsert);
+
+		childrenLocal.pop_back();
+		parentsLocal.pop_back();
+	}
+
+	//Insert the rest into edges
+	if (!childrenLocal.empty()) {
+		int c = childrenLocal.back();
+		pair<int, int> toInsert(center, c);
+		edges.push_back(toInsert);
+		childrenLocal.pop_back();
+	}
+
+	if (!parentsLocal.empty()) {
+		int p = parentsLocal.back();
+		pair<int, int> toInsert(p, center);
+		edges.push_back(toInsert);
+		parentsLocal.pop_back();
+	}
+
+	//Start to join the matching candidates
+
+	//Store the return result
+	shared_ptr<vector<MatchedComponent> > result = make_shared<vector<MatchedComponent> >();
+
+	while (!joints.empty()) {
+		//using the label to fetch the matching candidates from VEjoint index
+		triple<int, int, int> joint = joints.back();
+		joints.pop_back();
+
+		bool isCycle = false;
+		if (joint.first == joint.third)
+			isCycle = true;
+
+		string labelA = *star->primaryAttribute[joint.first];
+		string labelB = *star->primaryAttribute[joint.second];
+		string labelC = *star->primaryAttribute[joint.third];
+
+		triple<string, string, string> labelTri(labelA, labelB, labelC);
+
+		if (vejoint->jointIndex.find(labelTri) != vejoint->jointIndex.end()) {
+
+			shared_ptr<vector<triple<int, int, int> > >  matches = vejoint->jointIndex[labelTri];
+
+			if (result->empty()) {
+				for (auto i = matches->begin(); i != matches->end(); ++i) {
+					if (isCycle && i->first != i->third)
+						continue;
+					MatchedComponent mc(joint, *i);
+					result->push_back(mc);
+				}
+			}
+			else {
+
+				shared_ptr<vector<MatchedComponent> > newResult = make_shared<vector<MatchedComponent> >();
+
+				for (auto i = matches->begin(); i != matches->end(); ++i) {
+					if (isCycle && i->first != i->third)
+						continue;
+
+					for (auto j = result->begin(); j != result->end(); ++j) {
+
+						if (j->canJoin(joint, *i)) {
+
+							MatchedComponent tempNew(*j);
+
+							tempNew.join(joint, *i);
+
+							newResult->push_back(tempNew);
+						}
+					}
+				}
+
+				result = newResult;
+			}
+		}
+		else {
+			//Return an empty result set because there is no matching candidate for current joint
+			result->clear();
+			return result;
+		}
+
+	}
+
+	while (!edges.empty()) {
+		pair<int, int> edge = edges.back();
+		edges.pop_back();
+
+		string labelA = *star->primaryAttribute[edge.first];
+		string labelB = *star->primaryAttribute[edge.second];
+
+		pair<string, string> labelPair(labelA, labelB);
+
+		if (vejoint->edgeIndex.find(labelPair) != vejoint->edgeIndex.end()) {
+			shared_ptr<vector<pair<int, int> > > matches = vejoint->edgeIndex[labelPair];
+
+			if (result->empty()) {
+				for (auto i = matches->begin(); i != matches->end(); ++i) {
+					MatchedComponent mc(edge, *i);
+					result->push_back(mc);
+				}
+			}
+			else {
+
+				shared_ptr<vector<MatchedComponent> > newResult = make_shared<vector<MatchedComponent> >();
+
+				for (auto i = matches->begin(); i != matches->end(); ++i) {
+
+					for (auto j = result->begin(); j != result->end(); ++j) {
+
+						if (j->canJoin(edge, *i)) {
+
+							MatchedComponent tempNew(*j);
+
+							tempNew.join(edge, *i);
+
+							newResult->push_back(tempNew);
+
+						}
+
+					}
+				}
+
+				result = newResult;
+
+			}
+
+		}
+		else {
+			result->clear();
+			return result;
+		}
+
+	}
+
+	return result;
+}
+
+/**
+ * We assume that the Star graphs stored in stars are already sorted, which means that they can be joined consecutively.
+ */
+shared_ptr<vector<MatchedComponent> > SubQuery::joinStar(vector<shared_ptr<Star> > stars, vector<shared_ptr<vector<MatchedComponent> > > matches) {
+	shared_ptr<vector<MatchedComponent> > result = make_shared<vector<MatchedComponent> >();
+	auto it = matches.begin();
+
+	for (auto i = stars.begin(); i != stars.end(); ++i) {
+
+		auto m = **it;
+
+		if (result->empty()) {
+			for (auto j = m.begin(); j != m.end(); ++j)
+				result->push_back(*j);
+		}
+		else {
+
+			shared_ptr<vector<MatchedComponent> > newResult = make_shared<vector<MatchedComponent> >();
+
+			for (auto j = m.begin(); j != m.end(); ++j) {
+
+				for (auto k = result->begin(); k != result->end(); k++) {
+
+					if (j->canJoin(*k)) {
+
+						MatchedComponent cp(*k);
+
+						cp.join(*j);
+
+						newResult->push_back(cp);
+
+					}
+				}
+
+			}
+
+			result = newResult;
+		}
+
+		it++;
+	}
+
+	return result;
+}
+
+void SubQuery::evaluate(shared_ptr<Graph> queryGraph) {
+	vector<shared_ptr<Star> > stars = decomposeIntoStar(queryGraph);
+
+	vector<shared_ptr<vector<MatchedComponent> > > matches;
+
+	//Need to sort star vector first
+
+	for (auto i = stars.begin(); i != stars.end(); ++i) {
+		shared_ptr<vector<MatchedComponent> > starResult = starQuery(*i);
+		matches.push_back(starResult);
+	}
+
+	shared_ptr<vector<MatchedComponent> > finalMatch = joinStar(stars, matches);
+
+	for (auto i = finalMatch->begin(); i != finalMatch->end(); ++i) {
+		i->print();
+		cout << "!------------------------------!" << endl;
+	}
+}
+
+
+
+
+
+
+
 
 
 

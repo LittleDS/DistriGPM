@@ -20,12 +20,13 @@ private:
 	//The original data graph
 	shared_ptr<Partition> graphPartition;
 	string filename;
-	map<pair<string, string>, shared_ptr<vector<pair<int, int> > > > edgeIndex;
-	map<triple<string, string, string>, shared_ptr<vector<triple<int, int, int> > > > jointIndex;
 
-	VEJoint() {}
 
 public:
+	VEJoint() {}
+
+	map<pair<string, string>, shared_ptr<vector<pair<int, int> > > > edgeIndex;
+	map<triple<string, string, string>, shared_ptr<vector<triple<int, int, int> > > > jointIndex;
 
 	VEJoint(string _filename):filename(_filename) {
 		graphPartition = make_shared<Partition>();

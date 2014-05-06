@@ -101,6 +101,7 @@ void Graph::loadGraphFromFile(string &filename) {
 	}
 
 	ifs.close();
+	calculateDegree();
 }
 
 
