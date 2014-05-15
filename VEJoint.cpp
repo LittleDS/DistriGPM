@@ -73,24 +73,72 @@ void VEJoint::indexJoints() {
 
 		string labelA = *graphPartition->primaryAttribute[i->first];
 
-		for (auto j = localChildren[i->first]->begin(); j != localChildren[i->first]->end(); ++j) {
-			string labelB = *graphPartition->primaryAttribute[*j];
+		auto outNBSize =  localChildren[i->first]->size();
+		auto inNBSize = localParents[i->first]->size();
 
-			for (auto k = localParents[i->first]->begin(); k != localParents[i->first]->end(); ++k) {
+		//If this is a hub, then we need to take care of it specially
+		if (outNBSize * inNBSize >= HUB_THRESHOLD) {
+			//Set the flag to be true
+			//it's used to output the index files to disk
+			hasHub = true;
 
-				//The label should be obtained from the data graph
-				string labelC = *graphPartition->primaryAttribute[*k];
+			//Insert the vertex ID into hub set first
+			hubs.insert(i->first);
 
-				//Make the triple
-				triple<string, string, string> labelTri(labelC, labelA, labelB);
-				triple<int, int, int> IDTri(*k, i->first, *j);
-
-				if (jointIndex.find(labelTri) == jointIndex.end()) {
-					shared_ptr<vector<triple<int, int, int> > > IDList = make_shared<vector<triple<int, int, int> > >();
-					jointIndex.insert(make_pair(labelTri, IDList));
+			//Process the out neighbors of this hub
+			if (hubOutNeighbors.find(i->first) == hubOutNeighbors.end()) {
+				shared_ptr<map<string, shared_ptr<vector<int> > > > nbs = make_shared<map<string, shared_ptr<vector<int> > > >();
+				hubOutNeighbors.insert(make_pair(i->first, nbs));
+			}
+			auto outNBLabelMap = hubOutNeighbors[i->first];
+			for (auto j = localChildren[i->first]->begin(); j != localChildren[i->first]->end(); ++j) {
+				string childLabel = *graphPartition->primaryAttribute[*j];
+				if (outNBLabelMap->find(childLabel) == outNBLabelMap->end()) {
+					shared_ptr<vector<int> > childrenWithSameLabels= make_shared<vector<int> >();
+					outNBLabelMap->insert(make_pair(childLabel, childrenWithSameLabels));
 				}
 
-				jointIndex[labelTri]->push_back(IDTri);
+				(*outNBLabelMap)[childLabel]->push_back(*j);
+			}
+
+
+			//Process the in neighbors of this hub
+			if (hubInNeighbors.find(i->first) == hubInNeighbors.end()) {
+				shared_ptr<map<string, shared_ptr<vector<int> > > > nbs = make_shared<map<string, shared_ptr<vector<int> > > >();
+				hubInNeighbors.insert(make_pair(i->first, nbs));
+			}
+			auto inNBLabelMap = hubInNeighbors[i->first];
+			for (auto j = localParents[i->first]->begin(); j != localParents[i->first]->end(); ++j) {
+				string parentLabel = *graphPartition->primaryAttribute[*j];
+				if (inNBLabelMap->find(parentLabel) == inNBLabelMap->end()) {
+					shared_ptr<vector<int> > parentsWithSameLabels= make_shared<vector<int> >();
+					inNBLabelMap->insert(make_pair(parentLabel, parentsWithSameLabels));
+				}
+
+				(*inNBLabelMap)[parentLabel]->push_back(*j);
+			}
+
+		}
+		else {
+			for (auto j = localChildren[i->first]->begin(); j != localChildren[i->first]->end(); ++j) {
+				string labelB = *graphPartition->primaryAttribute[*j];
+
+				for (auto k = localParents[i->first]->begin(); k != localParents[i->first]->end(); ++k) {
+
+					//The label should be obtained from the data graph
+					string labelC = *graphPartition->primaryAttribute[*k];
+
+					//Make the triple
+					triple<string, string, string> labelTri(labelC, labelA, labelB);
+					triple<int, int, int> IDTri(*k, i->first, *j);
+
+					if (jointIndex.find(labelTri) == jointIndex.end()) {
+						shared_ptr<vector<triple<int, int, int> > > IDList = make_shared<vector<triple<int, int, int> > >();
+						jointIndex.insert(make_pair(labelTri, IDList));
+					}
+
+					jointIndex[labelTri]->push_back(IDTri);
+				}
 			}
 		}
 	}
@@ -138,6 +186,38 @@ void VEJoint::outputIndex(string &filename) {
 	}
 
 	ofs1.close();
+
+	if (hasHub) {
+		ofstream ofs2(filename + "Hubs");
+		if (!ofs2) {
+			cout << "The file cannot be open." << endl;
+			return;
+		}
+
+		for (auto i = hubOutNeighbors.begin(); i != hubOutNeighbors.end(); ++i) {
+			ofs2 << i->first << " " << i->second->size() << " " << hubInNeighbors[i->first]->size() << endl;
+			auto outLabels = i->second;
+			for (auto j = outLabels->begin(); j != outLabels->end(); j++) {
+				ofs2 << j->first << endl;
+				for (auto k = j->second->begin(); k != j->second->end(); k++) {
+					ofs2 << *k << " ";
+				}
+				ofs2 << endl;
+			}
+
+			auto inLabels = hubInNeighbors[i->first];
+			for (auto j = inLabels->begin(); j != inLabels->end(); j++) {
+				ofs2 << j->first << endl;
+				for (auto k = j->second->begin(); k != j->second->end(); k++) {
+					ofs2 << *k << " ";
+				}
+				ofs2 << endl;
+			}
+
+		}
+
+		ofs2.close();
+	}
 }
 
 /**
@@ -202,4 +282,59 @@ void VEJoint::loadIndex(string &filename) {
 	}
 
 	ifs1.close();
+}
+
+void VEJoint::loadIndexWithHub(string &filename) {
+	hasHub = true;
+	loadIndex(filename);
+	ifstream ifs(filename + "Hubs");
+	if (!ifs) {
+		cout << "ERROR: Opening the file." << endl;
+		return;
+	}
+
+	string line;
+	while (getline(ifs, line)) {
+		istringstream IDLine(line);
+		int ID, outdegree, indegree;
+		IDLine >> ID >> outdegree >> indegree;
+		shared_ptr<map<string, shared_ptr<vector<int> > > > outAnagrams = make_shared<map<string, shared_ptr<vector<int> > > >();
+		hubOutNeighbors.insert(make_pair(ID, outAnagrams));
+		for (int i = 0; i < outdegree; i++) {
+			//Read the label first
+			getline(ifs, line);
+			string label(line);
+
+			//Create the item in the map then
+			shared_ptr<vector<int> > neighborIDs = make_shared<vector<int> >();
+			outAnagrams->insert(make_pair(label, neighborIDs));
+
+			getline(ifs, line);
+			istringstream IDs(line);
+			int neighborID;
+			while (IDs >> neighborID) {
+				neighborIDs->push_back(neighborID);
+			}
+		}
+
+		shared_ptr<map<string, shared_ptr<vector<int> > > > inAnagrams = make_shared<map<string, shared_ptr<vector<int> > > >();
+		hubInNeighbors.insert(make_pair(ID, inAnagrams));
+		for (int i = 0; i < indegree; i++) {
+			//Do the same thing as out neighbors
+			getline(ifs, line);
+			string label(line);
+
+			shared_ptr<vector<int> > neighborIDs = make_shared<vector<int> >();
+			inAnagrams->insert(make_pair(label, neighborIDs));
+
+			getline(ifs, line);
+			istringstream IDs(line);
+			int neighborID;
+			while (IDs >> neighborID) {
+				neighborIDs->push_back(neighborID);
+			}
+		}
+	}
+
+	ifs.close();
 }

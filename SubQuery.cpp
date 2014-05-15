@@ -87,14 +87,14 @@ shared_ptr<vector<MatchedComponent> > SubQuery::starQuery(shared_ptr<Star> star)
 	}
 
 	//Insert the rest into edges
-	if (!childrenLocal.empty()) {
+	while (!childrenLocal.empty()) {
 		int c = childrenLocal.back();
 		pair<int, int> toInsert(center, c);
 		edges.push_back(toInsert);
 		childrenLocal.pop_back();
 	}
 
-	if (!parentsLocal.empty()) {
+	while (!parentsLocal.empty()) {
 		int p = parentsLocal.back();
 		pair<int, int> toInsert(p, center);
 		edges.push_back(toInsert);
@@ -127,7 +127,7 @@ shared_ptr<vector<MatchedComponent> > SubQuery::starQuery(shared_ptr<Star> star)
 
 			if (result->empty()) {
 				for (auto i = matches->begin(); i != matches->end(); ++i) {
-					if (isCycle && i->first != i->third)
+					if ( (isCycle && i->first != i->third) || (!isCycle && i->first == i->third) )
 						continue;
 					MatchedComponent mc(joint, *i);
 					result->push_back(mc);
@@ -264,8 +264,12 @@ shared_ptr<vector<MatchedComponent> > SubQuery::joinStar(vector<shared_ptr<Star>
 	return result;
 }
 
-void SubQuery::evaluate(shared_ptr<Graph> queryGraph) {
+shared_ptr<vector<MatchedComponent> > SubQuery::evaluate(shared_ptr<Graph> queryGraph) {
 	vector<shared_ptr<Star> > stars = decomposeIntoStar(queryGraph);
+//	for (auto i = stars.begin(); i != stars.end(); i++) {
+//		(*i)->print();
+//		cout << "*****************" << endl;
+//	}
 
 	vector<shared_ptr<vector<MatchedComponent> > > matches;
 
@@ -273,15 +277,17 @@ void SubQuery::evaluate(shared_ptr<Graph> queryGraph) {
 
 	for (auto i = stars.begin(); i != stars.end(); ++i) {
 		shared_ptr<vector<MatchedComponent> > starResult = starQuery(*i);
+//		for (auto j = starResult->begin(); j != starResult->end(); ++j) {
+//			j->print();
+//			cout << "~~~~~~~~~~~~~~~~~~~" << endl;
+//		}
+
 		matches.push_back(starResult);
 	}
 
 	shared_ptr<vector<MatchedComponent> > finalMatch = joinStar(stars, matches);
 
-	for (auto i = finalMatch->begin(); i != finalMatch->end(); ++i) {
-		i->print();
-		cout << "!------------------------------!" << endl;
-	}
+	return finalMatch;
 }
 
 
