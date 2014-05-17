@@ -23,12 +23,13 @@ private:
 	string filename;
 	unsigned int HUB_THRESHOLD = 500;
 	bool hasHub = false;
+	int totalHubs = 0;
 public:
 	VEJoint() {}
 
 	map<pair<string, string>, shared_ptr<vector<pair<int, int> > > > edgeIndex;
 	map<triple<string, string, string>, shared_ptr<vector<triple<int, int, int> > > > jointIndex;
-	set<int> hubs;
+	map<string, shared_ptr<vector<int> > > hubsMap;
 	map<int, shared_ptr<map<string, shared_ptr<vector<int> > > > > hubOutNeighbors;
 	map<int, shared_ptr<map<string, shared_ptr<vector<int> > > > > hubInNeighbors;
 
@@ -41,11 +42,14 @@ public:
 		graphPartition = inputPartition;
 	}
 
+
 	void indexEdges();
 	void indexJoints();
 	void outputIndex(string &filename);
 	void loadIndex(string &filename);
 	void loadIndexWithHub(string &filename);
+	shared_ptr<vector<triple<int, int, int> > > tripleMatches(triple<string, string, string> labels);
+	shared_ptr<vector<pair<int, int> > > pairMatches(pair<string, string> labels);
 };
 
 #endif /* VEJOINT_H_ */

@@ -121,12 +121,12 @@ shared_ptr<vector<MatchedComponent> > SubQuery::starQuery(shared_ptr<Star> star)
 
 		triple<string, string, string> labelTri(labelA, labelB, labelC);
 
-		if (vejoint->jointIndex.find(labelTri) != vejoint->jointIndex.end()) {
+		shared_ptr<vector<triple<int, int, int> > > jointMatches = vejoint->tripleMatches(labelTri);
 
-			shared_ptr<vector<triple<int, int, int> > >  matches = vejoint->jointIndex[labelTri];
+		if (jointMatches->size() > 0) {
 
 			if (result->empty()) {
-				for (auto i = matches->begin(); i != matches->end(); ++i) {
+				for (auto i = jointMatches->begin(); i != jointMatches->end(); ++i) {
 					if ( (isCycle && i->first != i->third) || (!isCycle && i->first == i->third) )
 						continue;
 					MatchedComponent mc(joint, *i);
@@ -137,7 +137,7 @@ shared_ptr<vector<MatchedComponent> > SubQuery::starQuery(shared_ptr<Star> star)
 
 				shared_ptr<vector<MatchedComponent> > newResult = make_shared<vector<MatchedComponent> >();
 
-				for (auto i = matches->begin(); i != matches->end(); ++i) {
+				for (auto i = jointMatches->begin(); i != jointMatches->end(); ++i) {
 					if (isCycle && i->first != i->third)
 						continue;
 
@@ -174,11 +174,12 @@ shared_ptr<vector<MatchedComponent> > SubQuery::starQuery(shared_ptr<Star> star)
 
 		pair<string, string> labelPair(labelA, labelB);
 
-		if (vejoint->edgeIndex.find(labelPair) != vejoint->edgeIndex.end()) {
-			shared_ptr<vector<pair<int, int> > > matches = vejoint->edgeIndex[labelPair];
+		shared_ptr<vector<pair<int, int> > > edgeMatches = vejoint->pairMatches(labelPair);
+
+		if (edgeMatches->size() > 0) {
 
 			if (result->empty()) {
-				for (auto i = matches->begin(); i != matches->end(); ++i) {
+				for (auto i = edgeMatches->begin(); i != edgeMatches->end(); ++i) {
 					MatchedComponent mc(edge, *i);
 					result->push_back(mc);
 				}
@@ -187,7 +188,7 @@ shared_ptr<vector<MatchedComponent> > SubQuery::starQuery(shared_ptr<Star> star)
 
 				shared_ptr<vector<MatchedComponent> > newResult = make_shared<vector<MatchedComponent> >();
 
-				for (auto i = matches->begin(); i != matches->end(); ++i) {
+				for (auto i = edgeMatches->begin(); i != edgeMatches->end(); ++i) {
 
 					for (auto j = result->begin(); j != result->end(); ++j) {
 

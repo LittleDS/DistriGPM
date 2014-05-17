@@ -62,7 +62,7 @@ void VEJoint::indexJoints() {
 		cout << "The data graph is not loaded." << endl;
 		return;
 	}
-
+	totalHubs = 0;
 	//short name for children
 	auto localChildren = graphPartition->children;
 	auto localParents = graphPartition->parents;
@@ -81,10 +81,7 @@ void VEJoint::indexJoints() {
 			//Set the flag to be true
 			//it's used to output the index files to disk
 			hasHub = true;
-
-			//Insert the vertex ID into hub set first
-			hubs.insert(i->first);
-
+			totalHubs++;
 			//Process the out neighbors of this hub
 			if (hubOutNeighbors.find(i->first) == hubOutNeighbors.end()) {
 				shared_ptr<map<string, shared_ptr<vector<int> > > > nbs = make_shared<map<string, shared_ptr<vector<int> > > >();
@@ -142,6 +139,7 @@ void VEJoint::indexJoints() {
 			}
 		}
 	}
+	//cout << totalHubs << endl;
 }
 
 /**
@@ -195,7 +193,8 @@ void VEJoint::outputIndex(string &filename) {
 		}
 
 		for (auto i = hubOutNeighbors.begin(); i != hubOutNeighbors.end(); ++i) {
-			ofs2 << i->first << " " << i->second->size() << " " << hubInNeighbors[i->first]->size() << endl;
+			ofs2 << i->first << " " << *graphPartition->primaryAttribute[i->first] << " "
+			     << i->second->size() << " " << hubInNeighbors[i->first]->size() << endl;
 			auto outLabels = i->second;
 			for (auto j = outLabels->begin(); j != outLabels->end(); j++) {
 				ofs2 << j->first << endl;
@@ -284,9 +283,15 @@ void VEJoint::loadIndex(string &filename) {
 	ifs1.close();
 }
 
+/**
+ * Load the hub information from disk and build the hubMap
+ */
 void VEJoint::loadIndexWithHub(string &filename) {
 	hasHub = true;
 	loadIndex(filename);
+
+	totalHubs = 0;
+
 	ifstream ifs(filename + "Hubs");
 	if (!ifs) {
 		cout << "ERROR: Opening the file." << endl;
@@ -297,7 +302,17 @@ void VEJoint::loadIndexWithHub(string &filename) {
 	while (getline(ifs, line)) {
 		istringstream IDLine(line);
 		int ID, outdegree, indegree;
-		IDLine >> ID >> outdegree >> indegree;
+		string label;
+		IDLine >> ID >> label >> outdegree >> indegree;
+
+		//Build the hubsMap
+		if (hubsMap.find(label) == hubsMap.end()) {
+			shared_ptr<vector<int> > l = make_shared<vector<int > >();
+			hubsMap.insert(make_pair(label, l));
+		}
+		hubsMap[label]->push_back(ID);
+		totalHubs++;
+
 		shared_ptr<map<string, shared_ptr<vector<int> > > > outAnagrams = make_shared<map<string, shared_ptr<vector<int> > > >();
 		hubOutNeighbors.insert(make_pair(ID, outAnagrams));
 		for (int i = 0; i < outdegree; i++) {
@@ -337,4 +352,52 @@ void VEJoint::loadIndexWithHub(string &filename) {
 	}
 
 	ifs.close();
+}
+
+shared_ptr<vector<triple<int, int, int> > > VEJoint::tripleMatches(triple<string, string, string> labels) {
+	shared_ptr<vector<triple<int, int, int> > > result;
+	if (jointIndex.find(labels) != jointIndex.end()) {
+		 result = make_shared<vector<triple<int, int, int> > >(*jointIndex[labels]);
+	}
+	else {
+		result = make_shared<vector<triple<int, int, int> > >();
+	}
+
+	string midLabel = labels.second;
+	if (hubsMap.find(midLabel) != hubsMap.end()) {
+		shared_ptr<vector<int> > hubs = hubsMap[midLabel];
+		for (auto i = hubs->begin(); i != hubs->end(); i++) {
+			shared_ptr<map<string, shared_ptr<vector<int> > > > outChildren = hubOutNeighbors[*i];
+			shared_ptr<map<string, shared_ptr<vector<int> > > > inParents = hubInNeighbors[*i];
+			shared_ptr<vector<int> > outChildrenWithLabelC;
+			if (outChildren->find(labels.third) != outChildren->end())
+				outChildrenWithLabelC = (*outChildren)[labels.third];
+
+			shared_ptr<vector<int> > inParentsWithLabelA;
+			if (inParents->find(labels.first) != inParents->end())
+				inParentsWithLabelA = (*inParents)[labels.first];
+
+			if (outChildrenWithLabelC != NULL && inParentsWithLabelA != NULL ) {
+				for (auto j = inParentsWithLabelA->begin(); j != inParentsWithLabelA->end(); ++j) {
+					for (auto k = outChildrenWithLabelC->begin(); k != outChildrenWithLabelC->end(); ++k) {
+						triple<int, int, int> ids(*j, *i, *k);
+						result->push_back(ids);
+					}
+				}
+			}
+		}
+	}
+
+	return result;
+}
+
+shared_ptr<vector<pair<int, int> > > VEJoint::pairMatches(pair<string, string> labels) {
+	shared_ptr<vector<pair<int, int> > >result;
+	if (edgeIndex.find(labels) != edgeIndex.end()) {
+		result = make_shared<vector<pair<int, int> > >(*edgeIndex[labels]);
+	}
+	else
+		result = make_shared<vector<pair<int, int> > >();
+
+	return result;
 }
