@@ -15,44 +15,52 @@
 #include <VEJoint.h>
 #include <SubQuery.h>
 #include <windows.h>
-
+#include <QueryGenerator.h>
 using namespace std;
 
 int main(int argc, char *argv[]) {
 	string dataFile = "LinkedINData";
-	shared_ptr<VEJoint> vj = make_shared<VEJoint>();
+	shared_ptr<Graph> dataGraph = make_shared<Graph>();
+	dataGraph->loadGraphFromFile(dataFile);
+	cout << "Finished Loading" << endl;
+	QueryGenerator qg(dataGraph, 4, 2);
+	shared_ptr<Graph> query = qg.generatePathQuery();
+	query->print();
+//	shared_ptr<VEJoint> vj = make_shared<VEJoint>();
 //	vj->indexEdges();
 //	vj->indexJoints();
 //	vj->outputIndex(dataFile);
-	vj->loadIndexWithHub(dataFile);
+//	vj->loadIndexWithHub(dataFile);
 
-	cout << "Finished Loading VEJoint" << endl;
-	SubQuery sq(vj);
-	shared_ptr<Graph> queryGraph = make_shared<Graph>();
-	string queryFile = "queryGraph";
-	queryGraph->loadGraphFromFile(queryFile);
+//	cout << "Finished Loading VEJoint" << endl;
+//	SubQuery sq(vj);
+//	shared_ptr<Graph> queryGraph = make_shared<Graph>();
+//	string queryFile = "queryGraph";
+//	queryGraph->loadGraphFromFile(queryFile);
+//
+//	unsigned __int64 freq;
+//	QueryPerformanceFrequency((LARGE_INTEGER*)&freq);
+//	double timerFrequency = (1.0/freq);
+//
+//	unsigned __int64 startTime;
+//	QueryPerformanceCounter((LARGE_INTEGER *)&startTime);
+//
+//
+//	shared_ptr<vector<MatchedComponent> > finalMatch = sq.evaluate(queryGraph);
+//
+//
+//	unsigned __int64 endTime;
+//	QueryPerformanceCounter((LARGE_INTEGER *)&endTime);
+//	double timeDifferenceInMilliseconds = ((endTime-startTime) * timerFrequency);
+//
+//	for (auto i = finalMatch->begin(); i != finalMatch->end(); ++i) {
+//		i->print();
+//		cout << "!------------------------------!" << endl;
+//	}
+//
+//	cout << "Running time " << timeDifferenceInMilliseconds << endl;
 
-	unsigned __int64 freq;
-	QueryPerformanceFrequency((LARGE_INTEGER*)&freq);
-	double timerFrequency = (1.0/freq);
 
-	unsigned __int64 startTime;
-	QueryPerformanceCounter((LARGE_INTEGER *)&startTime);
-
-
-	shared_ptr<vector<MatchedComponent> > finalMatch = sq.evaluate(queryGraph);
-
-
-	unsigned __int64 endTime;
-	QueryPerformanceCounter((LARGE_INTEGER *)&endTime);
-	double timeDifferenceInMilliseconds = ((endTime-startTime) * timerFrequency);
-
-	for (auto i = finalMatch->begin(); i != finalMatch->end(); ++i) {
-		i->print();
-		cout << "!------------------------------!" << endl;
-	}
-
-	cout << "Running time " << timeDifferenceInMilliseconds << endl;
 
 
 //	MPI::Init(argc, argv);
