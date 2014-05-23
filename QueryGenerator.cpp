@@ -120,8 +120,8 @@ shared_ptr<Graph> QueryGenerator::generateSubgraphQuery() {
 
 	shared_ptr<Graph> result = make_shared<Graph>();
 	for (auto i = selectedEdges.begin(); i != selectedEdges.end(); i++) {
-		result->addEdge(i->first, *(dataGraph->primaryAttribute[i->first]),
-				        i->second, *(dataGraph->primaryAttribute[i->second]));
+		result->addEdge(i->first, dataGraph->primaryAttribute[i->first],
+				        i->second, dataGraph->primaryAttribute[i->second]);
 	}
 	return result;
 }
@@ -165,8 +165,8 @@ shared_ptr<Star> QueryGenerator::generateStarQuery() {
 
 	shared_ptr<Star> result = make_shared<Star>(centerVertex);
 	for (auto i = selectedEdges.begin(); i != selectedEdges.end(); i++) {
-		result->addEdge(i->first, *(dataGraph->primaryAttribute[i->first]),
-				        i->second, *(dataGraph->primaryAttribute[i->second]));
+		result->addEdge(i->first, dataGraph->primaryAttribute[i->first],
+				        i->second, dataGraph->primaryAttribute[i->second]);
 	}
 	return result;
 }
@@ -211,8 +211,8 @@ shared_ptr<Graph> QueryGenerator::generatePathQuery() {
 			for (unsigned int i = 0; i < componentSize - 1; ++i) {
 				int s = (*generatedPath)[i];
 				int t = (*generatedPath)[i + 1];
-				result->addEdge(s, *(dataGraph->primaryAttribute[s]),
-						        t, *(dataGraph->primaryAttribute[t]));
+				result->addEdge(s, dataGraph->primaryAttribute[s],
+						        t, dataGraph->primaryAttribute[t]);
 			}
 
 			break;

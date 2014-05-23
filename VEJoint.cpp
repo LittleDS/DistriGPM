@@ -11,6 +11,8 @@
 #include <sstream>
 #include <iostream>
 #include <Triple.h>
+#include <cstdlib>
+
 using namespace std;
 
 /**
@@ -30,15 +32,15 @@ void VEJoint::indexEdges() {
 	for (auto i = localChildren.begin(); i != localChildren.end(); ++i) {
 
 		//Get the label of the source vertex
-		string labelA = *graphPartition->primaryAttribute[i->first];
+		int labelA = graphPartition->primaryAttribute[i->first];
 
 		//For all the children
 		for (auto j = localChildren[i->first]->begin(); j != localChildren[i->first]->end(); ++j) {
 			//current child label
-			string labelB = *graphPartition->primaryAttribute[*j];
+			int labelB = graphPartition->primaryAttribute[*j];
 
 			//Create the pairs
-			pair<string, string> labelPair(labelA, labelB);
+			pair<int, int> labelPair(labelA, labelB);
 			pair<int, int> IDPair(i->first, *j);
 
 			if (edgeIndex.find(labelPair) == edgeIndex.end()) {
@@ -71,7 +73,7 @@ void VEJoint::indexJoints() {
 		if (localParents.find(i->first) == localParents.end())
 			continue;
 
-		string labelA = *graphPartition->primaryAttribute[i->first];
+		int labelA = graphPartition->primaryAttribute[i->first];
 
 		auto outNBSize =  localChildren[i->first]->size();
 		auto inNBSize = localParents[i->first]->size();
@@ -84,12 +86,12 @@ void VEJoint::indexJoints() {
 			totalHubs++;
 			//Process the out neighbors of this hub
 			if (hubOutNeighbors.find(i->first) == hubOutNeighbors.end()) {
-				shared_ptr<map<string, shared_ptr<vector<int> > > > nbs = make_shared<map<string, shared_ptr<vector<int> > > >();
+				shared_ptr<map<int, shared_ptr<vector<int> > > > nbs = make_shared<map<int, shared_ptr<vector<int> > > >();
 				hubOutNeighbors.insert(make_pair(i->first, nbs));
 			}
 			auto outNBLabelMap = hubOutNeighbors[i->first];
 			for (auto j = localChildren[i->first]->begin(); j != localChildren[i->first]->end(); ++j) {
-				string childLabel = *graphPartition->primaryAttribute[*j];
+				int childLabel = graphPartition->primaryAttribute[*j];
 				if (outNBLabelMap->find(childLabel) == outNBLabelMap->end()) {
 					shared_ptr<vector<int> > childrenWithSameLabels= make_shared<vector<int> >();
 					outNBLabelMap->insert(make_pair(childLabel, childrenWithSameLabels));
@@ -101,12 +103,12 @@ void VEJoint::indexJoints() {
 
 			//Process the in neighbors of this hub
 			if (hubInNeighbors.find(i->first) == hubInNeighbors.end()) {
-				shared_ptr<map<string, shared_ptr<vector<int> > > > nbs = make_shared<map<string, shared_ptr<vector<int> > > >();
+				shared_ptr<map<int, shared_ptr<vector<int> > > > nbs = make_shared<map<int, shared_ptr<vector<int> > > >();
 				hubInNeighbors.insert(make_pair(i->first, nbs));
 			}
 			auto inNBLabelMap = hubInNeighbors[i->first];
 			for (auto j = localParents[i->first]->begin(); j != localParents[i->first]->end(); ++j) {
-				string parentLabel = *graphPartition->primaryAttribute[*j];
+				int parentLabel = graphPartition->primaryAttribute[*j];
 				if (inNBLabelMap->find(parentLabel) == inNBLabelMap->end()) {
 					shared_ptr<vector<int> > parentsWithSameLabels= make_shared<vector<int> >();
 					inNBLabelMap->insert(make_pair(parentLabel, parentsWithSameLabels));
@@ -118,15 +120,15 @@ void VEJoint::indexJoints() {
 		}
 		else {
 			for (auto j = localChildren[i->first]->begin(); j != localChildren[i->first]->end(); ++j) {
-				string labelB = *graphPartition->primaryAttribute[*j];
+				int labelB = graphPartition->primaryAttribute[*j];
 
 				for (auto k = localParents[i->first]->begin(); k != localParents[i->first]->end(); ++k) {
 
 					//The label should be obtained from the data graph
-					string labelC = *graphPartition->primaryAttribute[*k];
+					int labelC = graphPartition->primaryAttribute[*k];
 
 					//Make the triple
-					triple<string, string, string> labelTri(labelC, labelA, labelB);
+					triple<int, int, int> labelTri(labelC, labelA, labelB);
 					triple<int, int, int> IDTri(*k, i->first, *j);
 
 					if (jointIndex.find(labelTri) == jointIndex.end()) {
@@ -153,7 +155,7 @@ void VEJoint::outputIndex(string &filename) {
 	}
 
 	for (auto i = edgeIndex.begin(); i != edgeIndex.end(); ++i) {
-		pair<string, string> labelPair = i->first;
+		pair<int, int> labelPair = i->first;
 		ofs << labelPair.first << " " << labelPair.second << endl;
 		shared_ptr<vector<pair<int, int> > > IDPairList = i->second;
 
@@ -172,7 +174,7 @@ void VEJoint::outputIndex(string &filename) {
 	}
 
 	for (auto i = jointIndex.begin(); i != jointIndex.end(); ++i) {
-		triple<string, string, string> labelTri = i->first;
+		triple<int, int, int> labelTri = i->first;
 		ofs1 << labelTri.first << " " << labelTri.second << " " << labelTri.third << endl;
 
 		shared_ptr<vector<triple<int, int, int> > > IDTriList = i->second;
@@ -193,7 +195,7 @@ void VEJoint::outputIndex(string &filename) {
 		}
 
 		for (auto i = hubOutNeighbors.begin(); i != hubOutNeighbors.end(); ++i) {
-			ofs2 << i->first << " " << *graphPartition->primaryAttribute[i->first] << " "
+			ofs2 << i->first << " " << graphPartition->primaryAttribute[i->first] << " "
 			     << i->second->size() << " " << hubInNeighbors[i->first]->size() << endl;
 			auto outLabels = i->second;
 			for (auto j = outLabels->begin(); j != outLabels->end(); j++) {
@@ -232,9 +234,9 @@ void VEJoint::loadIndex(string &filename) {
 	string line;
 	while (getline(ifs, line)) {
 		istringstream labelline(line);
-		string labelA, labelB;
+		int labelA, labelB;
 		labelline >> labelA >> labelB;
-		pair<string, string> labelPair(labelA, labelB);
+		pair<int, int> labelPair(labelA, labelB);
 
 		getline(ifs, line);
 		istringstream idline(line);
@@ -260,9 +262,9 @@ void VEJoint::loadIndex(string &filename) {
 
 	while (getline(ifs1, line)) {
 		istringstream labelline(line);
-		string labelA, labelB, labelC;
+		int labelA, labelB, labelC;
 		labelline >> labelA >> labelB >> labelC;
-		triple<string, string, string> labelTri(labelA, labelB, labelC);
+		triple<int, int, int> labelTri(labelA, labelB, labelC);
 
 		getline(ifs1, line);
 		istringstream idline(line);
@@ -302,7 +304,7 @@ void VEJoint::loadIndexWithHub(string &filename) {
 	while (getline(ifs, line)) {
 		istringstream IDLine(line);
 		int ID, outdegree, indegree;
-		string label;
+		int label;
 		IDLine >> ID >> label >> outdegree >> indegree;
 
 		//Build the hubsMap
@@ -313,12 +315,12 @@ void VEJoint::loadIndexWithHub(string &filename) {
 		hubsMap[label]->push_back(ID);
 		totalHubs++;
 
-		shared_ptr<map<string, shared_ptr<vector<int> > > > outAnagrams = make_shared<map<string, shared_ptr<vector<int> > > >();
+		shared_ptr<map<int, shared_ptr<vector<int> > > > outAnagrams = make_shared<map<int, shared_ptr<vector<int> > > >();
 		hubOutNeighbors.insert(make_pair(ID, outAnagrams));
 		for (int i = 0; i < outdegree; i++) {
 			//Read the label first
 			getline(ifs, line);
-			string label(line);
+			int label = atoi(line.c_str());
 
 			//Create the item in the map then
 			shared_ptr<vector<int> > neighborIDs = make_shared<vector<int> >();
@@ -332,12 +334,12 @@ void VEJoint::loadIndexWithHub(string &filename) {
 			}
 		}
 
-		shared_ptr<map<string, shared_ptr<vector<int> > > > inAnagrams = make_shared<map<string, shared_ptr<vector<int> > > >();
+		shared_ptr<map<int, shared_ptr<vector<int> > > > inAnagrams = make_shared<map<int, shared_ptr<vector<int> > > >();
 		hubInNeighbors.insert(make_pair(ID, inAnagrams));
 		for (int i = 0; i < indegree; i++) {
 			//Do the same thing as out neighbors
 			getline(ifs, line);
-			string label(line);
+			int label = atoi(line.c_str());
 
 			shared_ptr<vector<int> > neighborIDs = make_shared<vector<int> >();
 			inAnagrams->insert(make_pair(label, neighborIDs));
@@ -354,7 +356,7 @@ void VEJoint::loadIndexWithHub(string &filename) {
 	ifs.close();
 }
 
-shared_ptr<vector<triple<int, int, int> > > VEJoint::tripleMatches(triple<string, string, string> labels) {
+shared_ptr<vector<triple<int, int, int> > > VEJoint::tripleMatches(triple<int, int, int> labels) {
 	shared_ptr<vector<triple<int, int, int> > > result;
 	if (jointIndex.find(labels) != jointIndex.end()) {
 		 result = make_shared<vector<triple<int, int, int> > >(*jointIndex[labels]);
@@ -363,12 +365,12 @@ shared_ptr<vector<triple<int, int, int> > > VEJoint::tripleMatches(triple<string
 		result = make_shared<vector<triple<int, int, int> > >();
 	}
 
-	string midLabel = labels.second;
+	int midLabel = labels.second;
 	if (hubsMap.find(midLabel) != hubsMap.end()) {
 		shared_ptr<vector<int> > hubs = hubsMap[midLabel];
 		for (auto i = hubs->begin(); i != hubs->end(); i++) {
-			shared_ptr<map<string, shared_ptr<vector<int> > > > outChildren = hubOutNeighbors[*i];
-			shared_ptr<map<string, shared_ptr<vector<int> > > > inParents = hubInNeighbors[*i];
+			shared_ptr<map<int, shared_ptr<vector<int> > > > outChildren = hubOutNeighbors[*i];
+			shared_ptr<map<int, shared_ptr<vector<int> > > > inParents = hubInNeighbors[*i];
 			shared_ptr<vector<int> > outChildrenWithLabelC;
 			if (outChildren->find(labels.third) != outChildren->end())
 				outChildrenWithLabelC = (*outChildren)[labels.third];
@@ -391,7 +393,7 @@ shared_ptr<vector<triple<int, int, int> > > VEJoint::tripleMatches(triple<string
 	return result;
 }
 
-shared_ptr<vector<pair<int, int> > > VEJoint::pairMatches(pair<string, string> labels) {
+shared_ptr<vector<pair<int, int> > > VEJoint::pairMatches(pair<int, int> labels) {
 	shared_ptr<vector<pair<int, int> > >result;
 	if (edgeIndex.find(labels) != edgeIndex.end()) {
 		result = make_shared<vector<pair<int, int> > >(*edgeIndex[labels]);

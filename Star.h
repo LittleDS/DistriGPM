@@ -13,12 +13,14 @@
 class Star: public Graph {
 
 public:
-	const int center;
+	int center;
+	Star():center(-1) { }
 	Star(int _center):center(_center) { }
 	~Star() { }
-private:
-	Star():center(-1) { }
 
+	shared_ptr<vector<int> > serialize();
+	void deseralize(shared_ptr<vector<int> > input);
+	void deseralize(vector<int>::iterator &it);
 };
 
 

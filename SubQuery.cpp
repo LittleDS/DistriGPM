@@ -14,6 +14,14 @@
 #include <Star.h>
 using namespace std;
 
+bool isIntersected(map<int, int> &a, map<int, int> &b) {
+	for (auto i = a.begin(); i != a.end(); i++) {
+		if (b.find(i->first) != b.end())
+			return true;
+	}
+	return false;
+}
+
 vector<shared_ptr<Star> > SubQuery::decomposeIntoStar(shared_ptr<Graph> queryGraph) {
 	vector<shared_ptr<Star>> result;
 
@@ -39,7 +47,7 @@ vector<shared_ptr<Star> > SubQuery::decomposeIntoStar(shared_ptr<Graph> queryGra
 			vector<int> clist(*queryGraph->children[center]);
 			for (auto i = clist.begin(); i != clist.end(); ++i) {
 				auto childLabel = queryGraph->primaryAttribute[*i];
-				star->addEdge(center, *centerLabel, *i, *childLabel);
+				star->addEdge(center, centerLabel, *i, childLabel);
 				queryGraph->removeEdge(center, *i);
 			}
 		}
@@ -48,7 +56,7 @@ vector<shared_ptr<Star> > SubQuery::decomposeIntoStar(shared_ptr<Graph> queryGra
 			vector<int> plist(*queryGraph->parents[center]);
 			for (auto i = plist.begin(); i != plist.end(); ++i) {
 				auto parentLabel = queryGraph->primaryAttribute[*i];
-				star->addEdge(*i, *parentLabel, center, *centerLabel);
+				star->addEdge(*i, parentLabel, center, centerLabel);
 				queryGraph->removeEdge(*i, center);
 			}
 		}
@@ -56,6 +64,17 @@ vector<shared_ptr<Star> > SubQuery::decomposeIntoStar(shared_ptr<Graph> queryGra
 		result.push_back(star);
 	}
 
+	auto head = result.begin();
+	while (head != result.end()) {
+		auto current = head + 1;
+		while (current != result.end()) {
+			if (isIntersected((*head)->primaryAttribute, (*current)->primaryAttribute)) {
+				iter_swap(head + 1, current);
+				break;
+			}
+		}
+		head++;
+	}
 	return result;
 }
 
@@ -115,11 +134,11 @@ shared_ptr<vector<MatchedComponent> > SubQuery::starQuery(shared_ptr<Star> star)
 		if (joint.first == joint.third)
 			isCycle = true;
 
-		string labelA = *star->primaryAttribute[joint.first];
-		string labelB = *star->primaryAttribute[joint.second];
-		string labelC = *star->primaryAttribute[joint.third];
+		int labelA = star->primaryAttribute[joint.first];
+		int labelB = star->primaryAttribute[joint.second];
+		int labelC = star->primaryAttribute[joint.third];
 
-		triple<string, string, string> labelTri(labelA, labelB, labelC);
+		triple<int, int, int> labelTri(labelA, labelB, labelC);
 
 		shared_ptr<vector<triple<int, int, int> > > jointMatches = vejoint->tripleMatches(labelTri);
 
@@ -169,10 +188,10 @@ shared_ptr<vector<MatchedComponent> > SubQuery::starQuery(shared_ptr<Star> star)
 		pair<int, int> edge = edges.back();
 		edges.pop_back();
 
-		string labelA = *star->primaryAttribute[edge.first];
-		string labelB = *star->primaryAttribute[edge.second];
+		int labelA = star->primaryAttribute[edge.first];
+		int labelB = star->primaryAttribute[edge.second];
 
-		pair<string, string> labelPair(labelA, labelB);
+		pair<int, int> labelPair(labelA, labelB);
 
 		shared_ptr<vector<pair<int, int> > > edgeMatches = vejoint->pairMatches(labelPair);
 
@@ -223,7 +242,7 @@ shared_ptr<vector<MatchedComponent> > SubQuery::starQuery(shared_ptr<Star> star)
 /**
  * We assume that the Star graphs stored in stars are already sorted, which means that they can be joined consecutively.
  */
-shared_ptr<vector<MatchedComponent> > SubQuery::joinStar(vector<shared_ptr<Star> > stars, vector<shared_ptr<vector<MatchedComponent> > > matches) {
+shared_ptr<vector<MatchedComponent> > SubQuery::joinStar(vector<shared_ptr<Star> > &stars, vector<shared_ptr<vector<MatchedComponent> > > &matches) {
 	shared_ptr<vector<MatchedComponent> > result = make_shared<vector<MatchedComponent> >();
 	auto it = matches.begin();
 
@@ -267,10 +286,10 @@ shared_ptr<vector<MatchedComponent> > SubQuery::joinStar(vector<shared_ptr<Star>
 
 shared_ptr<vector<MatchedComponent> > SubQuery::evaluate(shared_ptr<Graph> queryGraph) {
 	vector<shared_ptr<Star> > stars = decomposeIntoStar(queryGraph);
-//	for (auto i = stars.begin(); i != stars.end(); i++) {
-//		(*i)->print();
-//		cout << "*****************" << endl;
-//	}
+	for (auto i = stars.begin(); i != stars.end(); i++) {
+		(*i)->print();
+		cout << "*****************" << endl;
+	}
 
 	vector<shared_ptr<vector<MatchedComponent> > > matches;
 

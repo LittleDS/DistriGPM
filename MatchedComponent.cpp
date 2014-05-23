@@ -112,3 +112,40 @@ void MatchedComponent::print() {
 		cout << i->first << " " << i->second << endl;
 	}
 }
+
+shared_ptr<vector<int> > MatchedComponent::serialize() {
+	shared_ptr<vector<int> > result = make_shared<vector<int> >();
+	result->push_back(mapping.size() * 2);
+	for (auto i = mapping.begin(); i != mapping.end(); i++) {
+		result->push_back(i->first);
+		result->push_back(i->second);
+	}
+	return result;
+}
+
+void MatchedComponent::deseralize(shared_ptr<vector<int> > input) {
+	vector<int>::iterator it = input->begin();
+	int N = *it;
+	it++;
+	for (int i = 0; i < N / 2; i++) {
+		int first = *it;
+		it++;
+		int second = *it;
+		it++;
+		mapping.insert(make_pair(first, second));
+		valueSet.insert(second);
+	}
+}
+
+void MatchedComponent::deseralize(vector<int>::iterator &it) {
+	int N = *it;
+	it++;
+	for (int i = 0; i < N / 2; i++) {
+		int first = *it;
+		it++;
+		int second = *it;
+		it++;
+		mapping.insert(make_pair(first, second));
+		valueSet.insert(second);
+	}
+}

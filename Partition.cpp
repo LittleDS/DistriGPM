@@ -27,10 +27,10 @@ void Partition::outputGraph(string &outname) {
 		return;
 	}
 
-	map<int, shared_ptr<string> >::iterator it;
+	map<int, int>::iterator it;
 	for (it = primaryAttribute.begin(); it != primaryAttribute.end(); ++it) {
 		int core = corePart.find(it->first) == corePart.end() ? 0 : 1;
-		ofs << it->first << " " << *(it->second) << " " << core << endl;
+		ofs << it->first << " " << it->second << " " << core << endl;
 
 		if (children.find(it->first) != children.end()) {
 			for (auto i = children[it->first]->begin(); i != children[it->first]->end(); ++i) {
@@ -63,13 +63,13 @@ void Partition::loadGraphFromFile(string &filename) {
 		//Read the vertex ID and the label
 		int ID;
 		idline >> ID;
-		string label;
+		int label;
 		idline >> label;
 		int isCore;
 		idline >> isCore;
 
 		//Insert the value pair into the map
-		primaryAttribute.insert({ID, make_shared<string>(label)});
+		primaryAttribute.insert({ID, label});
 		if (isCore) corePart.insert(ID);
 
 		//Read the children information line
@@ -124,9 +124,9 @@ void Partition::loadGraphFromFile(string &filename) {
 }
 
 void Partition::print() {
-	map<int, shared_ptr<string> >::iterator it;
+	map<int, int>::iterator it;
 	for (it = primaryAttribute.begin(); it != primaryAttribute.end(); ++it) {
-		cout << it->first << " " << (*(it->second));
+		cout << it->first << " " << it->second;
 		if (corePart.find(it->first) == corePart.end())
 			cout << " 1" << endl;
 		else

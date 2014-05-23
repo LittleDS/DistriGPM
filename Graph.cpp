@@ -46,11 +46,11 @@ void Graph::loadGraphFromFile(string &filename) {
 		//Read the vertex ID and the label
 		int ID;
 		idline >> ID;
-		string label;
+		int label;
 		idline >> label;
 
 		//Insert the value pair into the map
-		primaryAttribute.insert({ID, make_shared<string>(label)});
+		primaryAttribute.insert({ID, label});
 
 		//Read the children information line
 		string childString;
@@ -105,14 +105,13 @@ void Graph::loadGraphFromFile(string &filename) {
 }
 
 
-void Graph::addEdge(int s, string &aS, int t, string &aT) {
+void Graph::addEdge(int s, int aS, int t, int aT) {
 
 	if (primaryAttribute.find(s) == primaryAttribute.end()) {
-		shared_ptr<string> ts = make_shared<string>(aS);
-		primaryAttribute.insert({s, ts});
+		primaryAttribute.insert({s, aS});
 	}
 	else {
-		string tempS = *primaryAttribute[s];
+		int tempS = primaryAttribute[s];
 		if (tempS != aS) {
 			cout << "The label doesn't match for source vertex" << endl;
 			return;
@@ -120,11 +119,10 @@ void Graph::addEdge(int s, string &aS, int t, string &aT) {
 	}
 
 	if (primaryAttribute.find(t) == primaryAttribute.end()) {
-		shared_ptr<string> ts = make_shared<string>(aT);
-		primaryAttribute.insert({t, ts});
+		primaryAttribute.insert({t, aT});
 	}
 	else {
-		string tempT = *primaryAttribute[t];
+		int tempT = primaryAttribute[t];
 		if (tempT != aT) {
 			cout << "The label doesn't match for target vertex" << endl;
 			return;
@@ -208,7 +206,7 @@ void Graph::removeEdge(int s, int t) {
 void Graph::calculateDegree() {
 	indegree.clear();
 	outdegree.clear();
-	map<int, shared_ptr<string> >::iterator it;
+	map<int, int >::iterator it;
 	for (it = primaryAttribute.begin(); it != primaryAttribute.end(); ++it) {
 		//Calculate the out-degree
 		if (children.find(it->first) != children.end()) {
@@ -234,7 +232,7 @@ void Graph::calculateDegree() {
  * We don't do the redundancy check here
  */
 void Graph::Combine(Graph &another) {
-	map<int, shared_ptr<string> >::iterator it;
+	map<int, int>::iterator it;
 
 	for (it = another.primaryAttribute.begin(); it != another.primaryAttribute.end(); ++it) {
 		if (primaryAttribute.find(it->first) == primaryAttribute.end()) {
@@ -279,9 +277,9 @@ void Graph::Combine(Graph &another) {
  * Print the graph structure for test purpose
  */
 void Graph::print() {
-	map<int, shared_ptr<string> >::iterator it;
+	map<int, int>::iterator it;
 	for (it = primaryAttribute.begin(); it != primaryAttribute.end(); ++it) {
-		cout << it->first << " " << (*(it->second)) << endl;
+		cout << it->first << " " << (it->second) << endl;
 		cout << outdegree[it->first] << " " << indegree[it->first] << endl;
 		map<int, shared_ptr<vector<int> > >::iterator cit = children.find(it->first);
 		if (cit != children.end()) {
@@ -313,9 +311,9 @@ void Graph::outputGraph(string &outname) {
 		return;
 	}
 
-	map<int, shared_ptr<string> >::iterator it;
+	map<int, int>::iterator it;
 	for (it = primaryAttribute.begin(); it != primaryAttribute.end(); ++it) {
-		ofs << it->first << " " << *(it->second) <<endl;
+		ofs << it->first << " " << it->second <<endl;
 		if (children.find(it->first) != children.end()) {
 			for (auto i = children[it->first]->begin(); i != children[it->first]->end(); ++i) {
 				ofs << *i << " ";
@@ -343,7 +341,7 @@ void Graph::outputParMETIS(string &filename) {
 	ofs << primaryAttribute.size() << " " << totalEdges << endl;
 
 	//Output the adjacency list of the graph and transfer the graph into undirected version
-	map<int, shared_ptr<string> >::iterator it;
+	map<int, int>::iterator it;
 	for (it = primaryAttribute.begin(); it != primaryAttribute.end(); ++it) {
 
 		//In order to remove the two-vertex cycle, we add all the neighbors of a vertex into a set
@@ -473,7 +471,7 @@ void Graph::divideGraph(int n, string &partfilename, string &output) {
 
 			//Assign all the out-going edges of one vertex to its partition
 			for (auto i = children[it->first]->begin(); i != children[it->first]->end(); ++i) {
-				partitions[D]->addEdge(it->first, *it->second, *i, *primaryAttribute[*i]);
+				partitions[D]->addEdge(it->first, it->second, *i, primaryAttribute[*i]);
 //				cout << it->first << " " << *it->second << " " << *i << " " << *primaryAttribute[*i] << endl;
 //				partitions[D]->print();
 			}
@@ -490,7 +488,7 @@ void Graph::divideGraph(int n, string &partfilename, string &output) {
 
 			}
 			for (auto i = parents[it->first]->begin(); i != parents[it->first]->end(); ++i) {
-				partitions[D]->addEdge(*i, *primaryAttribute[*i], it->first, * it->second);
+				partitions[D]->addEdge(*i, primaryAttribute[*i], it->first, it->second);
 			}
 		}
 	}

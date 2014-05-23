@@ -27,11 +27,11 @@ private:
 public:
 	VEJoint() {}
 
-	map<pair<string, string>, shared_ptr<vector<pair<int, int> > > > edgeIndex;
-	map<triple<string, string, string>, shared_ptr<vector<triple<int, int, int> > > > jointIndex;
-	map<string, shared_ptr<vector<int> > > hubsMap;
-	map<int, shared_ptr<map<string, shared_ptr<vector<int> > > > > hubOutNeighbors;
-	map<int, shared_ptr<map<string, shared_ptr<vector<int> > > > > hubInNeighbors;
+	map<pair<int, int>, shared_ptr<vector<pair<int, int> > > > edgeIndex;
+	map<triple<int, int, int>, shared_ptr<vector<triple<int, int, int> > > > jointIndex;
+	map<int, shared_ptr<vector<int> > > hubsMap;
+	map<int, shared_ptr<map<int, shared_ptr<vector<int> > > > > hubOutNeighbors;
+	map<int, shared_ptr<map<int, shared_ptr<vector<int> > > > > hubInNeighbors;
 
 	VEJoint(string _filename):filename(_filename) {
 		graphPartition = make_shared<Partition>();
@@ -48,8 +48,8 @@ public:
 	void outputIndex(string &filename);
 	void loadIndex(string &filename);
 	void loadIndexWithHub(string &filename);
-	shared_ptr<vector<triple<int, int, int> > > tripleMatches(triple<string, string, string> labels);
-	shared_ptr<vector<pair<int, int> > > pairMatches(pair<string, string> labels);
+	shared_ptr<vector<triple<int, int, int> > > tripleMatches(triple<int, int, int> labels);
+	shared_ptr<vector<pair<int, int> > > pairMatches(pair<int, int> labels);
 };
 
 #endif /* VEJOINT_H_ */

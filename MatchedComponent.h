@@ -12,6 +12,8 @@
 #include <set>
 #include <Triple.h>
 #include <utility>
+#include <memory>
+#include <vector>
 
 using namespace std;
 
@@ -20,6 +22,9 @@ private:
 	map<int, int> mapping;
 	set<int> valueSet;
 public:
+	//Default constructor
+	MatchedComponent() { }
+
 	MatchedComponent(triple<int, int, int> q, triple<int, int,int> m) {
 		mapping.insert(make_pair(q.first, m.first));
 		valueSet.insert(m.first);
@@ -43,7 +48,9 @@ public:
 	}
 
 	MatchedComponent(const MatchedComponent &another) {
-		mapping.insert(another.mapping.begin(), another.mapping.end());
+		for (auto i = another.mapping.begin(); i != another.mapping.end(); ++i) {
+			mapping.insert(make_pair(i->first, i->second));
+		}
 		valueSet.insert(another.valueSet.begin(), another.valueSet.end());
 	}
 
@@ -61,6 +68,11 @@ public:
 	}
 
 	void print();
+
+	shared_ptr<vector<int> > serialize();
+	void deseralize(shared_ptr<vector<int> > input);
+	void deseralize(vector<int>::iterator &it);
+
 	~MatchedComponent() { }
 };
 
