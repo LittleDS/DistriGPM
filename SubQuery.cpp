@@ -22,8 +22,10 @@ bool isIntersected(map<int, int> &a, map<int, int> &b) {
 	return false;
 }
 
-vector<shared_ptr<Star> > SubQuery::decomposeIntoStar(shared_ptr<Graph> queryGraph) {
+vector<shared_ptr<Star> > SubQuery::decomposeIntoStar(shared_ptr<Graph> queryGraphInput) {
 	vector<shared_ptr<Star>> result;
+
+	shared_ptr<Graph> queryGraph = make_shared<Graph>(*queryGraphInput);
 
 	queryGraph->calculateDegree();
 
@@ -72,6 +74,7 @@ vector<shared_ptr<Star> > SubQuery::decomposeIntoStar(shared_ptr<Graph> queryGra
 				iter_swap(head + 1, current);
 				break;
 			}
+			current++;
 		}
 		head++;
 	}
@@ -242,7 +245,7 @@ shared_ptr<vector<MatchedComponent> > SubQuery::starQuery(shared_ptr<Star> star)
 /**
  * We assume that the Star graphs stored in stars are already sorted, which means that they can be joined consecutively.
  */
-shared_ptr<vector<MatchedComponent> > SubQuery::joinStar(vector<shared_ptr<Star> > &stars, vector<shared_ptr<vector<MatchedComponent> > > &matches) {
+shared_ptr<vector<MatchedComponent> > SubQuery::joinStar(const vector<shared_ptr<Star> > &stars, const vector<shared_ptr<vector<MatchedComponent> > > &matches) {
 	shared_ptr<vector<MatchedComponent> > result = make_shared<vector<MatchedComponent> >();
 	auto it = matches.begin();
 
@@ -286,10 +289,10 @@ shared_ptr<vector<MatchedComponent> > SubQuery::joinStar(vector<shared_ptr<Star>
 
 shared_ptr<vector<MatchedComponent> > SubQuery::evaluate(shared_ptr<Graph> queryGraph) {
 	vector<shared_ptr<Star> > stars = decomposeIntoStar(queryGraph);
-	for (auto i = stars.begin(); i != stars.end(); i++) {
-		(*i)->print();
-		cout << "*****************" << endl;
-	}
+//	for (auto i = stars.begin(); i != stars.end(); i++) {
+//		(*i)->print();
+//		cout << "*****************" << endl;
+//	}
 
 	vector<shared_ptr<vector<MatchedComponent> > > matches;
 

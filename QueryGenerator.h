@@ -13,6 +13,8 @@
 #include <Star.h>
 #include <vector>
 #include <set>
+#include <time.h>
+#include <cstdlib>
 using namespace std;
 
 class QueryGenerator {
@@ -30,6 +32,7 @@ public:
 		componentSize(_componentSize),
 		pathLength(_pathLength)
 	{
+		srand(time(NULL));
 		for (auto i = dataGraph->children.begin(); i != dataGraph->children.end(); ++i) {
 			keySetofChildren.push_back(i->first);
 		}

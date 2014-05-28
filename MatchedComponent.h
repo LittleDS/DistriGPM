@@ -14,6 +14,7 @@
 #include <utility>
 #include <memory>
 #include <vector>
+#include <fstream>
 
 using namespace std;
 
@@ -68,7 +69,7 @@ public:
 	}
 
 	void print();
-
+	void print(ofstream &f);
 	shared_ptr<vector<int> > serialize();
 	void deseralize(shared_ptr<vector<int> > input);
 	void deseralize(vector<int>::iterator &it);

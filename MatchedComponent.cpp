@@ -9,6 +9,7 @@
 #include <map>
 #include <utility>
 #include <iostream>
+#include <fstream>
 
 using namespace std;
 
@@ -113,6 +114,11 @@ void MatchedComponent::print() {
 	}
 }
 
+void MatchedComponent::print(ofstream &f) {
+	for (auto i = mapping.begin(); i != mapping.end(); i++) {
+		f << i->first << " " << i->second << endl;
+	}
+}
 shared_ptr<vector<int> > MatchedComponent::serialize() {
 	shared_ptr<vector<int> > result = make_shared<vector<int> >();
 	result->push_back(mapping.size() * 2);

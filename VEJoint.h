@@ -21,7 +21,7 @@ private:
 	//The original data graph
 	shared_ptr<Partition> graphPartition;
 	string filename;
-	unsigned int HUB_THRESHOLD = 500;
+	unsigned int HUB_THRESHOLD = 0;
 	bool hasHub = false;
 	int totalHubs = 0;
 public:

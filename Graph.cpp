@@ -12,19 +12,36 @@
 #include <set>
 #include <string>
 #include <algorithm>
+#include <vector>
 
 using namespace std;
 //Default constructor
 Graph::Graph():totalEdges(0) { }
 
 Graph::Graph(const Graph &another):
-	totalEdges(another.totalEdges),
-	primaryAttribute(another.primaryAttribute),
-	children(another.children),
-	parents(another.parents),
-	indegree(another.indegree),
-	outdegree(another.outdegree)
+	totalEdges(another.totalEdges)
 	{
+			primaryAttribute = another.primaryAttribute;
+			for (auto i = another.children.begin(); i != another.children.end(); i++) {
+				shared_ptr<vector<int> > localV = make_shared<vector<int> >();
+				children.insert(make_pair(i->first, localV));
+				auto l = i->second;
+				for (auto j = l->begin(); j != l->end(); j++) {
+					children[i->first]->push_back(*j);
+				}
+			}
+
+			for (auto i = another.parents.begin(); i != another.parents.end(); i++) {
+				shared_ptr<vector<int> > localV = make_shared<vector<int> >();
+				parents.insert(make_pair(i->first, localV));
+				auto l = i->second;
+				for (auto j = l->begin(); j != l->end(); j++) {
+					parents[i->first]->push_back(*j);
+				}
+			}
+
+			indegree = another.indegree;
+			outdegree = another.outdegree;
     }
 
 

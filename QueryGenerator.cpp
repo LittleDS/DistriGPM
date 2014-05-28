@@ -11,7 +11,7 @@
 #include <time.h>
 #include <cstdlib>
 #include <algorithm>
-
+#include <iostream>
 using namespace std;
 
 shared_ptr<Graph> QueryGenerator::generateSubgraphQuery() {
@@ -20,7 +20,6 @@ shared_ptr<Graph> QueryGenerator::generateSubgraphQuery() {
 	vector<pair<int, int> > selectedEdges;
 
 	int startVertex, endVertex;
-	srand(time(NULL));
 
 	int N = keySetofChildren.size();
 	startVertex = keySetofChildren[rand() % N];
@@ -119,6 +118,7 @@ shared_ptr<Graph> QueryGenerator::generateSubgraphQuery() {
 	}
 
 	shared_ptr<Graph> result = make_shared<Graph>();
+
 	for (auto i = selectedEdges.begin(); i != selectedEdges.end(); i++) {
 		result->addEdge(i->first, dataGraph->primaryAttribute[i->first],
 				        i->second, dataGraph->primaryAttribute[i->second]);
@@ -130,7 +130,6 @@ shared_ptr<Star> QueryGenerator::generateStarQuery() {
 	vector<pair<int, int> > selectedEdges;
 
 	int centerVertex;
-	srand(time(NULL));
 
 	//Pick up the center vertex first
 	int N = keySetofChildren.size();
@@ -195,7 +194,7 @@ void QueryGenerator::DFSPath(int currentVertex, shared_ptr<vector<int> > Path) {
 shared_ptr<Graph> QueryGenerator::generatePathQuery() {
 
 	int startVertex;
-	srand(time(NULL));
+
 	shared_ptr<Graph> result = make_shared<Graph>();
 
 	int N = keySetofChildren.size();

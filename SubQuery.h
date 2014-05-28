@@ -27,7 +27,7 @@ public:
 
 	shared_ptr<vector<MatchedComponent> > starQuery(shared_ptr<Star> star);
 
-	shared_ptr<vector<MatchedComponent> > joinStar(vector<shared_ptr<Star> > &stars, vector<shared_ptr<vector<MatchedComponent> > > &matches);
+	shared_ptr<vector<MatchedComponent> > joinStar(const vector<shared_ptr<Star> > &stars, const vector<shared_ptr<vector<MatchedComponent> > > &matches);
 	shared_ptr<vector<MatchedComponent> > evaluate(shared_ptr<Graph> queryGraph);
 };
 
