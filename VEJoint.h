@@ -22,6 +22,7 @@ private:
 	shared_ptr<Partition> graphPartition;
 	string filename;
 	unsigned int HUB_THRESHOLD = 0;
+
 	bool hasHub = false;
 	int totalHubs = 0;
 public:
@@ -45,10 +46,14 @@ public:
 
 	void indexEdges();
 	void indexJoints();
+	void indexJointsNoHubsIndex();
 	void outputIndex(string &filename);
+	void outputIndexNoHubsIndex(string &filename);
 	void loadIndex(string &filename);
 	void loadIndexWithHub(string &filename);
+	void loadIndexWithoutHub(string &filename);
 	shared_ptr<vector<triple<int, int, int> > > tripleMatches(triple<int, int, int> labels);
+	shared_ptr<vector<triple<int, int, int> > > tripleMatchesNoHubs(triple<int, int, int> labels);
 	shared_ptr<vector<pair<int, int> > > pairMatches(pair<int, int> labels);
 };
 

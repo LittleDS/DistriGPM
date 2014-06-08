@@ -45,12 +45,12 @@ int main(int argc, char *argv[]) {
 	 * Generate Query
 	 *
 	 */
-//	string dataFile = "AmazonNew";
+//	string dataFile = "LinkedINNew";
 //	shared_ptr<Graph> dataGraph = make_shared<Graph>();
 //	dataGraph->loadGraphFromFile(dataFile);
 //	shared_ptr<QueryGenerator> qg = make_shared<QueryGenerator>(dataGraph, 5, 2);
 //	for (int i = 0; i < 50; i++) {
-//		string fn = "Amazonquery" + itos(i);
+//		string fn = "LinkedINquery" + itos(i);
 //		shared_ptr<Graph> q = qg->generateStarQuery();
 //		q->outputGraph(fn);
 //	}
@@ -70,51 +70,51 @@ int main(int argc, char *argv[]) {
 	/*
 	 * Build the index
 	 */
-//	string dataFile = "AmazonNew";
-//	shared_ptr<VEJoint> vj = make_shared<VEJoint>(dataFile);
-//	vj->indexEdges();
-//	vj->indexJoints();
-//	vj->outputIndex(dataFile);
-//	cout << "Finished Loading VEJoint" << endl;
+	string dataFile = "LinkedINNew";
+	shared_ptr<VEJoint> vj = make_shared<VEJoint>(dataFile);
+	vj->indexEdges();
+	vj->indexJoints();
+	vj->outputIndex(dataFile);
+	cout << "Finished Building VEJoint" << endl;
 
 	/*
 	 * Single machine query
 	 */
-	string dataFile = "AmazonNew";
-	shared_ptr<VEJoint> vj = make_shared<VEJoint>();
-	vj->loadIndexWithHub(dataFile);
-	cout << "Finished loading index" << endl;
-	SubQuery sq(vj);
-
-	for (int i = 0; i < 50; i++) {
-		shared_ptr<Graph> queryGraph = make_shared<Graph>();
-		string queryFile = "Amazonquery" + itos(i);
-		queryGraph->loadGraphFromFile(queryFile);
-
-		//vector<shared_ptr<Star> > stars = sq.decomposeIntoStar(queryGraph);
-		unsigned __int64 freq;
-		QueryPerformanceFrequency((LARGE_INTEGER*)&freq);
-		double timerFrequency = (1.0/freq);
-
-		unsigned __int64 startTime;
-		QueryPerformanceCounter((LARGE_INTEGER *)&startTime);
-
-		shared_ptr<vector<MatchedComponent> > finalMatch;
-		for (int j = 0; j < 1; j++) {
-			finalMatch = sq.evaluate(queryGraph);
-		}
-
-		unsigned __int64 endTime;
-		QueryPerformanceCounter((LARGE_INTEGER *)&endTime);
-		double timeDifferenceInMilliseconds = ((endTime-startTime) * timerFrequency);
-		cout << "Query " << i << " Total matches " << finalMatch->size() << endl;
-		for (auto i = finalMatch->begin(); i != finalMatch->end(); ++i) {
-			i->print();
-			cout << "!------------------------------!" << endl;
-		}
-
-		cout << "Running time " << timeDifferenceInMilliseconds / 1.0 << endl;
-	}
+//	string dataFile = "LinkedINNew";
+//	shared_ptr<VEJoint> vj = make_shared<VEJoint>(dataFile);
+//	vj->loadIndexWithHub(dataFile);
+//	cout << "Finished loading index" << endl;
+//	SubQuery sq(vj);
+//
+//	for (int i = 0; i < 50; i++) {
+//		shared_ptr<Graph> queryGraph = make_shared<Graph>();
+//		string queryFile = "LinkedINquery" + itos(i);
+//		queryGraph->loadGraphFromFile(queryFile);
+//
+//		//vector<shared_ptr<Star> > stars = sq.decomposeIntoStar(queryGraph);
+//		unsigned __int64 freq;
+//		QueryPerformanceFrequency((LARGE_INTEGER*)&freq);
+//		double timerFrequency = (1.0/freq);
+//
+//		unsigned __int64 startTime;
+//		QueryPerformanceCounter((LARGE_INTEGER *)&startTime);
+//
+//		shared_ptr<vector<MatchedComponent> > finalMatch;
+//		for (int j = 0; j < 1; j++) {
+//			finalMatch = sq.evaluate(queryGraph);
+//		}
+//
+//		unsigned __int64 endTime;
+//		QueryPerformanceCounter((LARGE_INTEGER *)&endTime);
+//		double timeDifferenceInMilliseconds = ((endTime-startTime) * timerFrequency);
+//		cout << "Query " << i << " Total matches " << finalMatch->size() << endl;
+//		for (auto i = finalMatch->begin(); i != finalMatch->end(); ++i) {
+//			i->print();
+//			cout << "!------------------------------!" << endl;
+//		}
+//
+//		cout << "Running time " << timeDifferenceInMilliseconds / 1.0 << endl;
+//	}
 
 	/*
 	 *

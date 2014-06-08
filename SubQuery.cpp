@@ -144,7 +144,10 @@ shared_ptr<vector<MatchedComponent> > SubQuery::starQuery(shared_ptr<Star> star)
 		triple<int, int, int> labelTri(labelA, labelB, labelC);
 
 		shared_ptr<vector<triple<int, int, int> > > jointMatches = vejoint->tripleMatches(labelTri);
-
+//		for (auto i = jointMatches->begin(); i != jointMatches->end(); i++) {
+//			cout << i->first << " " << i->second << " " << i->second << endl;
+//		}
+//		cout << "------------------" << endl;
 		if (jointMatches->size() > 0) {
 
 			if (result->empty()) {
