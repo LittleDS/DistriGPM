@@ -24,11 +24,14 @@ public:
 	SubQuery(shared_ptr<VEJoint> _vejoint):vejoint(_vejoint) { }
 
 	vector<shared_ptr<Star> > decomposeIntoStar(shared_ptr<Graph> queryGraph);
-
+	vector<vector<int> > decomposeIntoPieces(shared_ptr<Graph> queryGraphInput);
 	shared_ptr<vector<MatchedComponent> > starQuery(shared_ptr<Star> star);
 
 	shared_ptr<vector<MatchedComponent> > joinStar(const vector<shared_ptr<Star> > &stars, const vector<shared_ptr<vector<MatchedComponent> > > &matches);
 	shared_ptr<vector<MatchedComponent> > evaluate(shared_ptr<Graph> queryGraph);
+	shared_ptr<vector<MatchedComponent> > evaluateOld(shared_ptr<Graph> queryGraph);
+
+	shared_ptr<vector<MatchedComponent> > componentQuery(shared_ptr<Graph> queryGraphInput, vector<vector<int> > &pieces);
 };
 
 

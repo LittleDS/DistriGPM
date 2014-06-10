@@ -26,6 +26,13 @@ void outputVector(shared_ptr<vector<int> > input) {
 	cout << endl;
 }
 
+void outputVector(vector<int> &input) {
+	for (auto i = input.begin(); i != input.end(); i++) {
+		cout << *i << " ";
+	}
+	cout << endl;
+}
+
 inline string itos(int value) {
 	ostringstream convert;
 	convert << value;
@@ -33,25 +40,18 @@ inline string itos(int value) {
 }
 
 int main(int argc, char *argv[]) {
-//	string dataFile = "LinkedINDataNew1";
-//	shared_ptr<Partition> p = make_shared<Partition>();
-//	p->loadGraphFromFile(dataFile);
-//	shared_ptr<VEJoint> v = make_shared<VEJoint>(p);
-//	v->indexEdges();
-//	v->indexJoints();
-//	v->outputIndex(dataFile);
 
 	/*
 	 * Generate Query
 	 *
 	 */
-//	string dataFile = "LinkedINNew";
+//	string dataFile = "P2PNew";
 //	shared_ptr<Graph> dataGraph = make_shared<Graph>();
 //	dataGraph->loadGraphFromFile(dataFile);
-//	shared_ptr<QueryGenerator> qg = make_shared<QueryGenerator>(dataGraph, 5, 2);
+//	shared_ptr<QueryGenerator> qg = make_shared<QueryGenerator>(dataGraph, 10, 2);
 //	for (int i = 0; i < 50; i++) {
-//		string fn = "LinkedINquery" + itos(i);
-//		shared_ptr<Graph> q = qg->generateStarQuery();
+//		string fn = "P2Pquery" + itos(i);
+//		shared_ptr<Graph> q = qg->generateSubgraphQuery();
 //		q->outputGraph(fn);
 //	}
 
@@ -70,7 +70,7 @@ int main(int argc, char *argv[]) {
 	/*
 	 * Build the index
 	 */
-	string dataFile = "LinkedINNew";
+	string dataFile = "AmazonNew";
 	shared_ptr<VEJoint> vj = make_shared<VEJoint>(dataFile);
 	vj->indexEdges();
 	vj->indexJoints();
@@ -80,15 +80,15 @@ int main(int argc, char *argv[]) {
 	/*
 	 * Single machine query
 	 */
-//	string dataFile = "LinkedINNew";
-//	shared_ptr<VEJoint> vj = make_shared<VEJoint>(dataFile);
+//	string dataFile = "P2PNew";
+//	shared_ptr<VEJoint> vj = make_shared<VEJoint>();
 //	vj->loadIndexWithHub(dataFile);
 //	cout << "Finished loading index" << endl;
 //	SubQuery sq(vj);
 //
 //	for (int i = 0; i < 50; i++) {
 //		shared_ptr<Graph> queryGraph = make_shared<Graph>();
-//		string queryFile = "LinkedINquery" + itos(i);
+//		string queryFile = "P2Pquery" + itos(i);
 //		queryGraph->loadGraphFromFile(queryFile);
 //
 //		//vector<shared_ptr<Star> > stars = sq.decomposeIntoStar(queryGraph);
@@ -99,15 +99,14 @@ int main(int argc, char *argv[]) {
 //		unsigned __int64 startTime;
 //		QueryPerformanceCounter((LARGE_INTEGER *)&startTime);
 //
-//		shared_ptr<vector<MatchedComponent> > finalMatch;
-//		for (int j = 0; j < 1; j++) {
-//			finalMatch = sq.evaluate(queryGraph);
-//		}
+//		shared_ptr<vector<MatchedComponent> > finalMatch = sq.evaluateOld(queryGraph);
 //
 //		unsigned __int64 endTime;
 //		QueryPerformanceCounter((LARGE_INTEGER *)&endTime);
 //		double timeDifferenceInMilliseconds = ((endTime-startTime) * timerFrequency);
 //		cout << "Query " << i << " Total matches " << finalMatch->size() << endl;
+////		cout << " Total matches " << finalMatch->size() << endl;
+//
 //		for (auto i = finalMatch->begin(); i != finalMatch->end(); ++i) {
 //			i->print();
 //			cout << "!------------------------------!" << endl;
