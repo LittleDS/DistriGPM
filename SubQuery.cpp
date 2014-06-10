@@ -14,8 +14,18 @@
 #include <Star.h>
 using namespace std;
 
-vector<shared_ptr<Star> > SubQuery::decomposeIntoStar(shared_ptr<Graph> queryGraph) {
+bool isIntersected(map<int, int> &a, map<int, int> &b) {
+	for (auto i = a.begin(); i != a.end(); i++) {
+		if (b.find(i->first) != b.end())
+			return true;
+	}
+	return false;
+}
+
+vector<shared_ptr<Star> > SubQuery::decomposeIntoStar(shared_ptr<Graph> queryGraphInput) {
 	vector<shared_ptr<Star>> result;
+
+	shared_ptr<Graph> queryGraph = make_shared<Graph>(*queryGraphInput);
 
 	queryGraph->calculateDegree();
 
@@ -39,7 +49,7 @@ vector<shared_ptr<Star> > SubQuery::decomposeIntoStar(shared_ptr<Graph> queryGra
 			vector<int> clist(*queryGraph->children[center]);
 			for (auto i = clist.begin(); i != clist.end(); ++i) {
 				auto childLabel = queryGraph->primaryAttribute[*i];
-				star->addEdge(center, *centerLabel, *i, *childLabel);
+				star->addEdge(center, centerLabel, *i, childLabel);
 				queryGraph->removeEdge(center, *i);
 			}
 		}
@@ -48,7 +58,7 @@ vector<shared_ptr<Star> > SubQuery::decomposeIntoStar(shared_ptr<Graph> queryGra
 			vector<int> plist(*queryGraph->parents[center]);
 			for (auto i = plist.begin(); i != plist.end(); ++i) {
 				auto parentLabel = queryGraph->primaryAttribute[*i];
-				star->addEdge(*i, *parentLabel, center, *centerLabel);
+				star->addEdge(*i, parentLabel, center, centerLabel);
 				queryGraph->removeEdge(*i, center);
 			}
 		}
@@ -56,6 +66,18 @@ vector<shared_ptr<Star> > SubQuery::decomposeIntoStar(shared_ptr<Graph> queryGra
 		result.push_back(star);
 	}
 
+	auto head = result.begin();
+	while (head != result.end()) {
+		auto current = head + 1;
+		while (current != result.end()) {
+			if (isIntersected((*head)->primaryAttribute, (*current)->primaryAttribute)) {
+				iter_swap(head + 1, current);
+				break;
+			}
+			current++;
+		}
+		head++;
+	}
 	return result;
 }
 
@@ -115,18 +137,21 @@ shared_ptr<vector<MatchedComponent> > SubQuery::starQuery(shared_ptr<Star> star)
 		if (joint.first == joint.third)
 			isCycle = true;
 
-		string labelA = *star->primaryAttribute[joint.first];
-		string labelB = *star->primaryAttribute[joint.second];
-		string labelC = *star->primaryAttribute[joint.third];
+		int labelA = star->primaryAttribute[joint.first];
+		int labelB = star->primaryAttribute[joint.second];
+		int labelC = star->primaryAttribute[joint.third];
 
-		triple<string, string, string> labelTri(labelA, labelB, labelC);
+		triple<int, int, int> labelTri(labelA, labelB, labelC);
 
-		if (vejoint->jointIndex.find(labelTri) != vejoint->jointIndex.end()) {
-
-			shared_ptr<vector<triple<int, int, int> > >  matches = vejoint->jointIndex[labelTri];
+		shared_ptr<vector<triple<int, int, int> > > jointMatches = vejoint->tripleMatches(labelTri);
+//		for (auto i = jointMatches->begin(); i != jointMatches->end(); i++) {
+//			cout << i->first << " " << i->second << " " << i->second << endl;
+//		}
+//		cout << "------------------" << endl;
+		if (jointMatches->size() > 0) {
 
 			if (result->empty()) {
-				for (auto i = matches->begin(); i != matches->end(); ++i) {
+				for (auto i = jointMatches->begin(); i != jointMatches->end(); ++i) {
 					if ( (isCycle && i->first != i->third) || (!isCycle && i->first == i->third) )
 						continue;
 					MatchedComponent mc(joint, *i);
@@ -137,7 +162,7 @@ shared_ptr<vector<MatchedComponent> > SubQuery::starQuery(shared_ptr<Star> star)
 
 				shared_ptr<vector<MatchedComponent> > newResult = make_shared<vector<MatchedComponent> >();
 
-				for (auto i = matches->begin(); i != matches->end(); ++i) {
+				for (auto i = jointMatches->begin(); i != jointMatches->end(); ++i) {
 					if (isCycle && i->first != i->third)
 						continue;
 
@@ -169,16 +194,17 @@ shared_ptr<vector<MatchedComponent> > SubQuery::starQuery(shared_ptr<Star> star)
 		pair<int, int> edge = edges.back();
 		edges.pop_back();
 
-		string labelA = *star->primaryAttribute[edge.first];
-		string labelB = *star->primaryAttribute[edge.second];
+		int labelA = star->primaryAttribute[edge.first];
+		int labelB = star->primaryAttribute[edge.second];
 
-		pair<string, string> labelPair(labelA, labelB);
+		pair<int, int> labelPair(labelA, labelB);
 
-		if (vejoint->edgeIndex.find(labelPair) != vejoint->edgeIndex.end()) {
-			shared_ptr<vector<pair<int, int> > > matches = vejoint->edgeIndex[labelPair];
+		shared_ptr<vector<pair<int, int> > > edgeMatches = vejoint->pairMatches(labelPair);
+
+		if (edgeMatches->size() > 0) {
 
 			if (result->empty()) {
-				for (auto i = matches->begin(); i != matches->end(); ++i) {
+				for (auto i = edgeMatches->begin(); i != edgeMatches->end(); ++i) {
 					MatchedComponent mc(edge, *i);
 					result->push_back(mc);
 				}
@@ -187,7 +213,7 @@ shared_ptr<vector<MatchedComponent> > SubQuery::starQuery(shared_ptr<Star> star)
 
 				shared_ptr<vector<MatchedComponent> > newResult = make_shared<vector<MatchedComponent> >();
 
-				for (auto i = matches->begin(); i != matches->end(); ++i) {
+				for (auto i = edgeMatches->begin(); i != edgeMatches->end(); ++i) {
 
 					for (auto j = result->begin(); j != result->end(); ++j) {
 
@@ -222,7 +248,7 @@ shared_ptr<vector<MatchedComponent> > SubQuery::starQuery(shared_ptr<Star> star)
 /**
  * We assume that the Star graphs stored in stars are already sorted, which means that they can be joined consecutively.
  */
-shared_ptr<vector<MatchedComponent> > SubQuery::joinStar(vector<shared_ptr<Star> > stars, vector<shared_ptr<vector<MatchedComponent> > > matches) {
+shared_ptr<vector<MatchedComponent> > SubQuery::joinStar(const vector<shared_ptr<Star> > &stars, const vector<shared_ptr<vector<MatchedComponent> > > &matches) {
 	shared_ptr<vector<MatchedComponent> > result = make_shared<vector<MatchedComponent> >();
 	auto it = matches.begin();
 

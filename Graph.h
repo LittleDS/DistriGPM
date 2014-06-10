@@ -22,7 +22,7 @@ class Graph {
 		int totalEdges;
 
 	    //We require that each vertex only has one label in this work
-		map<int, shared_ptr<string> > primaryAttribute;
+		map<int, int> primaryAttribute;
 
 		//The adjacency list of each vertex	    
 	    map<int, shared_ptr<vector<int> > > children;
@@ -39,7 +39,7 @@ class Graph {
 	    virtual void loadGraphFromFile(string &filename);
 
 	    //Add an edge to the graph, the source and target vertex might be new
-	    void addEdge(int s, string &aS, int t, string &aT);
+	    void addEdge(int s, int aS, int t, int aT);
 
 	    //Remove an existing edge from the graph
 	    void removeEdge(int s, int t);
@@ -65,6 +65,7 @@ class Graph {
 
 	    //According to the part file from ParMETIS, divide the graph into partition
 	    void divideGraph(int n, string &partfilename, string &output);
+
 	    virtual ~Graph();
 
 };
